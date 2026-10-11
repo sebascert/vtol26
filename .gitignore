@@ -13,6 +13,11 @@ __pycache__/
 Thumbs.db
 
 # C/C++ build products
+**/build/
+**/CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
 *.o
 *.a
 *.so

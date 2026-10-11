@@ -17,8 +17,8 @@ experiment live in `simulation/`.
 
 ## What is not implemented here
 
-There is no versioned Raspberry Pi program, MAVLink connection setup, tested
-setpoint interface, actuator mapping, or Pi service configuration. The
-standalone PSO simulation does not connect to PX4. Those pieces must be
-implemented and documented before this repository can support a Pi/Pixhawk
-hardware integration test.
+The versioned Pi UART/MAVLink prototype is in `companion/mavlink_uart/`, but
+there is no working PSO integration, PX4 setpoint interface, validated actuator
+mapping, Pi service configuration, or documented connection-loss response.
+The standalone PSO simulation does not connect to PX4. The prototype needs
+those pieces before it can support a hardware control test.
