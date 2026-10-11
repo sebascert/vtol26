@@ -42,7 +42,7 @@ Esto crea un hipercubo de 9 dimensiones donde se inicializarán las partículas 
 - β_I, β_D: Ángulos alerones
 ### ✅ Modelo físico básico de fuerzas y momentos
 - Se usa una representación física de fuerzas aerodinámicas y de empuje
-- El cálculo sigue la estructura de `sim/simulink/fuerzas_v4.m`
+- El cálculo sigue la estructura de `../simulink/fuerzas_v4.m`
 - Se integra posición y orientación con masa, gravedad e inercia
 
 ### ✅ Objetivo en espacio de pose (pose-space)
