@@ -1,12 +1,16 @@
 #pragma once
 
 #include "drone_state.hpp"
-#include "pso/pso_state.hpp"
+#include "pso_runtime.hpp"
 
-class PSOInterface
-{
+class PSOInterface {
 public:
-
-    std::array<double, DIMENSION_ESTADO>
-    runPSO(const DroneState& state);
+    explicit PSOInterface(const std::string& config_path,
+                          pso_runtime::RuntimeLimits limits = {});
+    pso_runtime::Result runPSO(const DroneState& state);
+    void reset();
+private:
+    pso_runtime::Optimizer optimizer_;
+    pso_runtime::RuntimeLimits limits_;
+    std::array<double, DIMENSION_ESTADO> center_;
 };

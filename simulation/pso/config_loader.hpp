@@ -2,6 +2,8 @@
 #define CONFIG_LOADER_HPP
 
 #include <cctype>
+#include <cmath>
+#include <limits>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -65,6 +67,7 @@ public:
         std::vector<double> posicion_objetivo = {0.0, 0.0, 0.0};
         std::vector<double> orientacion_objetivo = {0.0, 0.0, 0.0};
         bool tiene_pose_objetivo = false;
+        std::vector<double> actuator_min, actuator_max, actuator_initial;
     };
 
     static Configuracion cargarDesdeJson(const std::string& rutaArchivo) {
@@ -127,15 +130,22 @@ private:
         configuracion.w_min = extraerDouble(json, "\"w_min\"", "pso", configuracion.w_min);
         configuracion.c1 = extraerDouble(json, "\"c1\"", "pso", configuracion.c1);
         configuracion.c2 = extraerDouble(json, "\"c2\"", "pso", configuracion.c2);
-        configuracion.num_particulas = static_cast<int>(extraerDouble(json, "\"num_particles\"", "pso", static_cast<double>(configuracion.num_particulas)));
-        configuracion.max_iteraciones = static_cast<int>(extraerDouble(json, "\"max_iterations\"", "pso", static_cast<double>(configuracion.max_iteraciones)));
+        configuracion.num_particulas = extraerEntero(json, "\"num_particles\"", "pso", static_cast<double>(configuracion.num_particulas));
+        configuracion.max_iteraciones = extraerEntero(json, "\"max_iterations\"", "pso", static_cast<double>(configuracion.max_iteraciones));
         configuracion.k_am = extraerDouble(json, "\"k_am\"", "pso", configuracion.k_am);
-        configuracion.ciclos_externos = static_cast<int>(extraerDouble(json, "\"external_cycles\"", "pso", static_cast<double>(configuracion.ciclos_externos)));
+        configuracion.ciclos_externos = extraerEntero(json, "\"external_cycles\"", "pso", static_cast<double>(configuracion.ciclos_externos));
         configuracion.contraccion_k_am = extraerDouble(json, "\"k_am_contraction\"", "pso", configuracion.contraccion_k_am);
         configuracion.k_am_minimo = extraerDouble(json, "\"k_am_min\"", "pso", configuracion.k_am_minimo);
         configuracion.umbral_convergencia = extraerDouble(json, "\"convergence_threshold\"", "pso", configuracion.umbral_convergencia);
 
+        configuracion.actuator_min = extraerArregloDouble(json, "\"min\"", "actuators", {});
+        configuracion.actuator_max = extraerArregloDouble(json, "\"max\"", "actuators", {});
+        configuracion.actuator_initial = extraerArregloDouble(json, "\"initial\"", "actuators", {});
         configuracion.tiene_pose_objetivo = tieneObjeto(json, "target_pose");
+        if (configuracion.tiene_pose_objetivo) {
+            configuracion.posicion_objetivo.clear();
+            configuracion.orientacion_objetivo.clear();
+        }
         configuracion.posicion_objetivo = extraerArregloDouble(json, "\"position\"", "target_pose", configuracion.posicion_objetivo);
         configuracion.orientacion_objetivo = extraerArregloDouble(json, "\"orientation\"", "target_pose", configuracion.orientacion_objetivo);
         if (configuracion.posicion_objetivo.size() != 3 || configuracion.orientacion_objetivo.size() != 3) {
@@ -180,6 +190,13 @@ private:
         return json;
     }
 
+    static int extraerEntero(const std::string& json, const std::string& clave, const std::string& contexto, double valorDefecto) {
+        const double value = extraerDouble(json, clave, contexto, valorDefecto);
+        if (!std::isfinite(value) || value < 0 || value > std::numeric_limits<int>::max() || value != std::floor(value))
+            throw std::runtime_error("Invalid integer: " + clave);
+        return static_cast<int>(value);
+    }
+
     static double extraerDouble(const std::string& json, const std::string& clave, const std::string& contexto, double valorDefecto) {
         const std::string ambito = extraerObjeto(json, contexto);
         size_t pos = ambito.find(clave);
@@ -207,15 +224,14 @@ private:
             }
         }
 
-        if (fin == inicio) {
-            return valorDefecto;
-        }
-
-        try {
-            return std::stod(ambito.substr(inicio, fin - inicio));
-        } catch (...) {
-            return valorDefecto;
-        }
+        const std::string token = ambito.substr(inicio, fin - inicio);
+        size_t consumed = 0;
+        const double value = std::stod(token, &consumed);
+        size_t next = ambito.find_first_not_of(" \t\r\n", fin);
+        if (consumed != token.size() || !std::isfinite(value) ||
+            (next != std::string::npos && ambito[next] != ',' && ambito[next] != '}'))
+            throw std::runtime_error("Invalid number: " + clave);
+        return value;
     }
 
     static std::vector<double> extraerArregloDouble(const std::string& json,
@@ -260,11 +276,12 @@ private:
             if (inicio == std::string::npos) {
                 continue;
             }
-            try {
-                resultado.push_back(std::stod(numero.substr(inicio, fin - inicio + 1)));
-            } catch (...) {
-                return valorDefecto;
-            }
+            const auto token = numero.substr(inicio, fin - inicio + 1);
+            size_t consumed = 0;
+            const double value = std::stod(token, &consumed);
+            if (consumed != token.size() || !std::isfinite(value))
+                throw std::runtime_error("Invalid array number: " + clave);
+            resultado.push_back(value);
         }
 
         return resultado.empty() ? valorDefecto : resultado;

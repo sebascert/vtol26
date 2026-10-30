@@ -2,6 +2,8 @@
 #define PSO_ESTADO_HPP
 
 #include <array>
+#include <algorithm>
+#include <limits>
 #include <cmath>
 #include <stdexcept>
 
@@ -32,13 +34,22 @@ constexpr double K_AM_DEFAULT = 5;
 struct Estado {
     std::array<double, DIMENSION_ESTADO> D;
     double radioMuestreo = K_AM_DEFAULT;
+    std::array<double, DIMENSION_ESTADO> minimum = [] {
+        std::array<double, DIMENSION_ESTADO> v{};
+        v.fill(-std::numeric_limits<double>::infinity()); return v;
+    }();
+    std::array<double, DIMENSION_ESTADO> maximum = [] {
+        std::array<double, DIMENSION_ESTADO> v{};
+        v.fill(std::numeric_limits<double>::infinity()); return v;
+    }();
 
     std::pair<double, double> obtenerRangoMuestreo(size_t indice) const {
         if (indice >= DIMENSION_ESTADO) {
             throw std::out_of_range("Índice fuera del rango del estado");
         }
         const double amplitud = radioMuestreo * FACTOR_MUESTREO_DIM[indice];
-        return {D[indice] - amplitud, D[indice] + amplitud};
+        return {std::max(minimum[indice], D[indice] - amplitud),
+                std::min(maximum[indice], D[indice] + amplitud)};
     }
 
     void establecerRadioMuestreo(double nuevoRadio) {

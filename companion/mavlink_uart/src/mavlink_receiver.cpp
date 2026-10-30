@@ -1,4 +1,7 @@
 #include "mavlink_receiver.hpp"
+#include "serial_port.hpp"
+#include <cerrno>
+#include <cmath>
 
 #include <iostream>
 #include <fcntl.h>
@@ -7,31 +10,15 @@
 
 #include <common/mavlink.h>
 
-bool MAVLinkReceiver::init(const char* port)
-{
-    uart_fd = open(
-        port,
-        O_RDWR | O_NOCTTY | O_NDELAY
-    );
+MAVLinkReceiver::~MAVLinkReceiver() { if (uart_fd >= 0) close(uart_fd); }
 
-    if(uart_fd == -1)
-        return false;
-
-    termios options;
-
-    tcgetattr(uart_fd, &options);
-
-    cfsetispeed(&options, B57600);
-    cfsetospeed(&options, B57600);
-
-    options.c_cflag = CS8 | CLOCAL | CREAD;
-
-    tcsetattr(
-        uart_fd,
-        TCSANOW,
-        &options
-    );
-
+bool MAVLinkReceiver::init(const char* port, int baud_rate) {
+    uart_fd = open(port, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    int error = 0;
+    if (uart_fd < 0) return false;
+    if (!configureSerialPort(uart_fd, baud_rate, error)) {
+        close(uart_fd); uart_fd = -1; errno = error; return false;
+    }
     return true;
 }
 
@@ -42,7 +29,9 @@ bool MAVLinkReceiver::receive(DroneState& state)
 
     uint8_t byte;
 
-    while(read(uart_fd, &byte, 1) > 0)
+    ssize_t received = 0;
+    size_t budget = 8192;
+    while(budget-- > 0 && (received = read(uart_fd, &byte, 1)) > 0)
     {
         if(mavlink_parse_char(
             MAVLINK_COMM_0,
@@ -50,6 +39,14 @@ bool MAVLinkReceiver::receive(DroneState& state)
             &msg,
             &status))
         {
+            if (msg.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
+                mavlink_heartbeat_t hb{};
+                mavlink_msg_heartbeat_decode(&msg, &hb);
+                if (hb.autopilot != MAV_AUTOPILOT_PX4) continue;
+                if (source_system_ == 0) { source_system_ = msg.sysid; source_component_ = msg.compid; }
+            }
+            if (source_system_ == 0 || msg.sysid != source_system_ || msg.compid != source_component_) continue;
+            const auto now = DroneState::Clock::now();
             switch(msg.msgid)
             {
                 // ATTITUDE
@@ -62,6 +59,13 @@ bool MAVLinkReceiver::receive(DroneState& state)
                         &att
                     );
 
+                    state.attitude_received = {};
+                    if (!std::isfinite(att.roll) || !std::isfinite(att.pitch) || !std::isfinite(att.yaw) ||
+                        !std::isfinite(att.rollspeed) || !std::isfinite(att.pitchspeed) || !std::isfinite(att.yawspeed)) break;
+                    state.attitude_received = now;
+                    state.gyro_x = att.rollspeed;
+                    state.gyro_y = att.pitchspeed;
+                    state.gyro_z = att.yawspeed;
                     state.roll  = att.roll;
                     state.pitch = att.pitch;
                     state.yaw   = att.yaw;
@@ -69,6 +73,17 @@ bool MAVLinkReceiver::receive(DroneState& state)
                     break;
                 }
 
+                case MAVLINK_MSG_ID_LOCAL_POSITION_NED: {
+                    mavlink_local_position_ned_t pos{};
+                    mavlink_msg_local_position_ned_decode(&msg, &pos);
+                    state.position_received = {};
+                    if (!std::isfinite(pos.x) || !std::isfinite(pos.y) || !std::isfinite(pos.z) ||
+                        !std::isfinite(pos.vx) || !std::isfinite(pos.vy) || !std::isfinite(pos.vz)) break;
+                    state.local_x = pos.x; state.local_y = pos.y; state.local_z = pos.z;
+                    state.velocity_x = pos.vx; state.velocity_y = pos.vy; state.velocity_z = pos.vz;
+                    state.position_received = now;
+                    break;
+                }
                 // GPS
                 case MAVLINK_MSG_ID_GPS_RAW_INT:
                 {
@@ -100,9 +115,7 @@ bool MAVLinkReceiver::receive(DroneState& state)
                     state.accel_y = imu.yacc;
                     state.accel_z = imu.zacc;
 
-                    state.gyro_x = imu.xgyro;
-                    state.gyro_y = imu.ygyro;
-                    state.gyro_z = imu.zgyro;
+                    // Angular rates come from ATTITUDE in rad/s, not RAW_IMU millirad/s.
 
                     break;
                 }
@@ -149,7 +162,10 @@ bool MAVLinkReceiver::receive(DroneState& state)
                     &hud
                 );
 
+                state.airspeed_received = {};
+                if (!std::isfinite(hud.airspeed) || hud.airspeed < 0) break;
                 state.airspeed = hud.airspeed;
+                state.airspeed_received = now;
 
                 break;
             }
@@ -180,6 +196,7 @@ bool MAVLinkReceiver::receive(DroneState& state)
                     );
 
                     state.flight_mode = hb.custom_mode;
+                    state.heartbeat_received = now;
 
                     break;
             }
@@ -190,5 +207,5 @@ bool MAVLinkReceiver::receive(DroneState& state)
         }
     }
 
-    return true;
+    return received >= 0 || errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR;
 }

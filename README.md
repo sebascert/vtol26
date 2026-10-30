@@ -13,9 +13,11 @@ computer.
 - This repository contains the PSO simulation, vehicle model, CAD, project
   references, and a Raspberry Pi UART/MAVLink prototype in
   `companion/mavlink_uart/`.
-- The prototype is incomplete: its PSO interface returns fixed values, and its
-  actuator command sender does not transmit setpoints to PX4. It is not a
-  validated hardware control integration.
+- The companion runs the shared PSO on fresh PX4 telemetry and returns bounded
+  nine-value allocations as JSON and MAVLink diagnostic data, with timeout
+  suppression. Physical actuator output mapping remains unimplemented.
+- Unmodified MAVLink headers are downloaded at build time from a pinned upstream
+  revision; third-party source copies are excluded from the project source tree.
 - Earlier STM32 firmware and its implementation guides are retained under
   `legacy/` and `docs/archive/` for reference. They do not describe the current
   architecture.
@@ -64,6 +66,6 @@ visualization helpers. MATLAB/Simulink is not included in this repository.
 
 ## Next integration work
 
-The companion prototype still needs a working PSO integration, a PX4 setpoint
-mapping, validation of the actual Pi-to-Pixhawk link settings, and connection-
-loss handling. See [`companion/README.md`](companion/README.md).
+The companion allocation runtime needs aircraft model/calibration validation,
+a physical PX4 output mapping, and Pi-to-Pixhawk hardware timing/failsafe tests.
+See [`companion/README.md`](companion/README.md) for the runnable allocation path.

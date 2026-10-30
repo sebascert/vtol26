@@ -1,5 +1,6 @@
 #include "pso_state.hpp"
 #include "config_loader.hpp"
+#include "pso_runtime.hpp"
 #include <iostream>
 #include <vector>
 #include <random>
@@ -237,6 +238,19 @@ public:
         estadoActual.inicializar();
     }
 
+    void establecerVehiculo(const pso_runtime::VehicleState& state) {
+        posicionActual = state.position;
+        orientacionActual = state.orientation;
+        velocidadActual = state.velocity;
+        velocidadAngularActual = state.angular_rate;
+        parametrosFisicos.velocidad_aire_referencia = state.airspeed_m_s;
+    }
+
+    void establecerLimites(const std::vector<double>& minimum, const std::vector<double>& maximum) {
+        std::copy(minimum.begin(), minimum.end(), estadoActual.minimum.begin());
+        std::copy(maximum.begin(), maximum.end(), estadoActual.maximum.begin());
+    }
+
     void establecerParametrosFisicos(const ParametrosFisicos& parametros) {
         parametrosFisicos = parametros;
     }
@@ -444,7 +458,17 @@ public:
             momentoCuerpo[2] / parametrosFisicos.inercia[2]
         };
 
-        resultado.orientacion = sumar3(orientacionActual, escalar3(derivadaOmega, dt));
+        // Integrate body rates through a rotation quaternion, including existing angular velocity.
+        const auto delta = sumar3(escalar3(omega, dt), escalar3(derivadaOmega, 0.5 * dt * dt));
+        const double angle = std::hypot(delta[0], delta[1], delta[2]);
+        const double scale = angle > 1e-12 ? std::sin(angle * 0.5) / angle : 0.5;
+        const auto q = multiplicarCuaterniones(cuerpoAInercial,
+            {std::cos(angle * 0.5), delta[0]*scale, delta[1]*scale, delta[2]*scale});
+        resultado.orientacion = {
+            std::atan2(2*(q[0]*q[1]+q[2]*q[3]), 1-2*(q[1]*q[1]+q[2]*q[2])),
+            std::asin(std::clamp(2*(q[0]*q[2]-q[3]*q[1]), -1.0, 1.0)),
+            std::atan2(2*(q[0]*q[3]+q[1]*q[2]), 1-2*(q[2]*q[2]+q[3]*q[3]))
+        };
         return resultado;
     }
 
@@ -719,6 +743,106 @@ public:
     }
 };
 
+namespace pso_runtime {
+namespace {
+void require(bool condition, const char* message) {
+    if (!condition) throw std::invalid_argument(message);
+}
+template<class Values> void finiteValues(const Values& values) {
+    for (double v : values) require(std::isfinite(v) && std::abs(v) <= 1e6, "Non-finite or excessive PSO input");
+}
+}
+
+Optimizer::Optimizer(const std::string& config_path)
+    : config_(CargadorConfiguracion::cargarDesdeJson(config_path)) {
+    const auto& c = config_;
+    require(c.tiene_pose_objetivo, "PSO requires target_pose");
+    require(c.actuator_min.size() == DIMENSION_ESTADO && c.actuator_max.size() == DIMENSION_ESTADO &&
+            c.actuator_initial.size() == DIMENSION_ESTADO, "PSO requires nine actuator min/max/initial values");
+    finiteValues(c.actuator_min); finiteValues(c.actuator_max); finiteValues(c.actuator_initial);
+    finiteValues(c.posicion_objetivo); finiteValues(c.orientacion_objetivo); finiteValues(c.inercia);
+    require(c.inercia.size() == 3, "PSO requires three inertia values");
+    for (double v : c.inercia) require(v > 0, "Inertia must be positive");
+    finiteValues(std::initializer_list<double>{c.rho,c.g,c.masa,c.dt,c.area_ala,c.cl0_ala,c.cl_alpha_ala,
+        c.cd0_ala,c.k_ala,c.area_cola,c.cl_gamma_cola,c.cd_gamma_cola,c.angulo_diedro_cola,
+        c.area_ruddervator,c.cl_ruddervator,c.cd_ruddervator,c.angulo_diedro_ruddervator,
+        c.area_aleron,c.cl_beta_aleron,c.cd_beta_aleron,c.coeficiente_empuje,
+        c.k_dinamica,c.k_pos,c.k_orientacion,c.w_max,c.w_min,c.c1,c.c2,c.k_am,
+        c.contraccion_k_am,c.k_am_minimo,c.umbral_convergencia});
+    require(c.masa > 0 && c.dt > 0 && c.dt <= 1 && c.rho > 0 && c.g > 0 && c.coeficiente_empuje > 0,
+            "Invalid PSO physics");
+    require(c.k_dinamica >= 0 && c.k_pos > 0 && c.k_orientacion >= 0 && c.c1 >= 0 && c.c2 >= 0 &&
+            c.w_min >= 0 && c.w_max >= c.w_min && c.k_am > 0 && c.k_am_minimo > 0 &&
+            c.contraccion_k_am > 0 && c.contraccion_k_am <= 1 && c.umbral_convergencia > 0 &&
+            c.num_particulas >= 2 && c.max_iteraciones >= 1 && c.ciclos_externos >= 1, "Invalid PSO parameters");
+    for (size_t d = 0; d < DIMENSION_ESTADO; ++d) {
+        require(c.actuator_min[d] <= c.actuator_max[d] && c.actuator_initial[d] >= c.actuator_min[d] &&
+                c.actuator_initial[d] <= c.actuator_max[d], "Invalid actuator limits or initial state");
+        require(d >= 3 || c.actuator_min[d] >= 0, "Negative rotor limits");
+        initial_actuator_state_[d] = c.actuator_initial[d];
+    }
+}
+
+const std::array<double, DIMENSION_ESTADO>& Optimizer::initialActuatorState() const {
+    return initial_actuator_state_;
+}
+
+Result Optimizer::solve(const VehicleState& state,
+                       const std::array<double, DIMENSION_ESTADO>& search_center,
+                       const RuntimeLimits& limits) const {
+    finiteValues(state.position); finiteValues(state.orientation); finiteValues(state.velocity);
+    finiteValues(state.angular_rate); finiteValues(search_center);
+    require(std::isfinite(state.airspeed_m_s) && state.airspeed_m_s >= 0 && state.airspeed_m_s <= 1000,
+            "Invalid airspeed");
+    require(limits.particles >= 2 && limits.particles <= 256 && limits.iterations >= 1 && limits.iterations <= 100 &&
+            limits.external_cycles >= 1 && limits.external_cycles <= 30, "Invalid runtime budget");
+    const auto& c = config_;
+    for (size_t d = 0; d < DIMENSION_ESTADO; ++d)
+        require(search_center[d] >= c.actuator_min[d] && search_center[d] <= c.actuator_max[d], "Search center out of bounds");
+    EntornoPSO environment;
+    environment.establecerParametrosFisicos(ParametrosFisicos::desdeConfiguracion(c));
+    environment.establecerVehiculo(state);
+    environment.establecerLimites(c.actuator_min, c.actuator_max);
+    environment.establecerPoseObjetivo({c.posicion_objetivo[0],c.posicion_objetivo[1],c.posicion_objetivo[2]},
+                                     {c.orientacion_objetivo[0],c.orientacion_objetivo[1],c.orientacion_objetivo[2]});
+    Result result;
+    result.actuators = search_center;
+    result.fitness = environment.calcularCostoPosicionOrientacion(search_center);
+    result.objective_evaluations = 1;
+    const size_t count = std::min(limits.particles, static_cast<size_t>(c.num_particulas));
+    const int iterations = std::min(limits.iterations, c.max_iteraciones);
+    double radius = c.k_am;
+    for (int cycle = 0; cycle < std::min(limits.external_cycles, c.ciclos_externos); ++cycle) {
+        environment.establecerEstadoActual(result.actuators);
+        environment.establecerRadioMuestreo(radius);
+        auto particles = environment.generarParticulasIniciales(count);
+        particles[0] = result.actuators; // Retain the incumbent so random sampling cannot worsen it.
+        auto best = particles;
+        std::vector<std::array<double, DIMENSION_ESTADO>> velocity(count);
+        std::vector<double> costs(count);
+        for (size_t i = 0; i < count; ++i) {
+            costs[i] = environment.calcularCostoPosicionOrientacion(particles[i]);
+            if (costs[i] < result.fitness) { result.fitness = costs[i]; result.actuators = particles[i]; }
+        }
+        result.objective_evaluations += count;
+        for (int iteration = 0; iteration < iterations; ++iteration) {
+            environment.actualizar_enjambre(particles, velocity, best, costs,
+                result.actuators, result.fitness, iteration, iterations - 1);
+            result.objective_evaluations += count;
+        }
+        radius = std::max(c.k_am_minimo, radius * c.contraccion_k_am);
+    }
+    const auto pose = environment.obtenerPosePredicha(result.actuators);
+    result.position_error_m = std::hypot(pose.first[0]-c.posicion_objetivo[0],
+                                       pose.first[1]-c.posicion_objetivo[1], pose.first[2]-c.posicion_objetivo[2]);
+    result.position_converged = result.position_error_m <= c.umbral_convergencia;
+    require(std::isfinite(result.fitness) && std::isfinite(result.position_error_m), "Invalid PSO result");
+    finiteValues(result.actuators);
+    return result;
+}
+} // namespace pso_runtime
+
+#ifndef PSO_RUNTIME_ONLY
 int main() {
     std::cout << "=== Entorno de Pruebas PSO para VTOL ===" << std::endl;
 
@@ -911,3 +1035,5 @@ int main() {
 
     return 0;
 }
+
+#endif

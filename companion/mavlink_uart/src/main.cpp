@@ -1,81 +1,75 @@
-#include <iostream>
-#include <unistd.h>
-
-#include "drone_state.hpp"
+#include "application_config.hpp"
 #include "mavlink_receiver.hpp"
 #include "mavlink_sender.hpp"
 #include "pso_interface.hpp"
 
-int main()
-{
-    
-    DroneState state;
-    
-    MAVLinkSender sender;
+#include <chrono>
+#include <csignal>
+#include <iomanip>
+#include <iostream>
+#include <thread>
 
-    MAVLinkReceiver receiver;
+namespace {
+volatile std::sig_atomic_t running = 1;
+void stop(int) { running = 0; }
+}
 
-    if(!receiver.init())
-    {
-        std::cout
-            << "Error UART\n";
-
-        return -1;
+int main(int argc, char* argv[]) {
+    ApplicationConfig config;
+    bool help = false;
+    std::string error;
+    if (!parseCommandLine(argc, argv, config, help, error)) {
+        std::cerr << error << '\n'; return 1;
     }
-
-    if(!sender.init())
-    {
-        std::cout
-            << "Error initializing MAVLink sender\n";
-
-        return -1;
+    if (help) { printUsage(argv[0]); return 0; }
+    try {
+        PSOInterface pso(config.pso_config_path, {static_cast<size_t>(config.pso_max_particles),
+                         config.pso_max_iterations, config.pso_external_cycles});
+        MAVLinkReceiver receiver;
+        MAVLinkSender sender;
+        if (!receiver.init(config.uart_port.c_str(), config.baud_rate) ||
+            !sender.init(config.uart_port.c_str(), config.baud_rate)) {
+            std::cerr << "Cannot configure UART: " << config.uart_port << '\n'; return 1;
+        }
+        std::signal(SIGINT, stop);
+        std::signal(SIGTERM, stop);
+        DroneState state;
+        auto next_heartbeat = DroneState::Clock::now();
+        auto next_pso = next_heartbeat;
+        bool was_ready = false;
+        std::cerr << "Waiting for fresh PX4 telemetry; returning model allocations only.\n";
+        while (running) {
+            if (!receiver.receive(state)) { std::cerr << "UART receive failed\n"; return 1; }
+            const auto now = DroneState::Clock::now();
+            if (now >= next_heartbeat) {
+                if (!sender.sendHeartbeat()) { std::cerr << "Heartbeat write failed\n"; return 1; }
+                next_heartbeat = now + std::chrono::seconds(1);
+            }
+            const bool ready = state.ready(now, std::chrono::milliseconds(config.heartbeat_timeout_ms));
+            if (!ready && was_ready) { pso.reset(); std::cerr << "Telemetry stale; allocations suspended\n"; }
+            was_ready = ready;
+            if (ready && now >= next_pso) {
+                const auto inputs = state;
+                const auto solution = pso.runPSO(inputs);
+                // Refresh the link after optimization; never publish a result after its inputs expire.
+                if (!receiver.receive(state)) return 1;
+                if (inputs.ready(DroneState::Clock::now(), std::chrono::milliseconds(config.heartbeat_timeout_ms)) &&
+                    state.ready(DroneState::Clock::now(), std::chrono::milliseconds(config.heartbeat_timeout_ms))) {
+                    if (!sender.sendPSOCommand(solution)) { std::cerr << "Allocation write failed\n"; return 1; }
+                    std::cout << std::setprecision(12) << "{\"actuators\":[";
+                    for (size_t i = 0; i < solution.actuators.size(); ++i)
+                        std::cout << (i ? "," : "") << solution.actuators[i];
+                    std::cout << "],\"fitness\":" << solution.fitness
+                              << ",\"position_error_m\":" << solution.position_error_m
+                              << ",\"position_converged\":" << (solution.position_converged ? "true" : "false")
+                              << ",\"objective_evaluations\":" << solution.objective_evaluations << "}" << std::endl;
+                }
+                next_pso = DroneState::Clock::now() + std::chrono::milliseconds(config.pso_period_ms);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(config.loop_period_ms));
+        }
+    } catch (const std::exception& exception) {
+        std::cerr << "Allocator error: " << exception.what() << '\n'; return 1;
     }
-
-    std::cout
-        << "Esperando PX4..."
-        << std::endl;
-
-    PSOInterface pso;
-        while(true)
-    {
-        receiver.receive(state);
-
-        auto solution = pso.runPSO(state);
-        sender.sendPSOCommand(solution);
-        
-        sender.sendHeartbeat();
-
-        std::array<double, 9> pso_values = solution;
-
-        std::cout
-            << "PSO: "
-            << pso_values[0] << " "
-            << pso_values[1] << " "
-            << pso_values[2] << " "
-            << pso_values[3] << " "
-            << pso_values[4] << " "
-            << pso_values[5] << " "
-            << pso_values[6] << " "
-            << pso_values[7] << " "
-            << pso_values[8]
-            << std::endl;
-            /*<< "Roll: "
-            << state.roll
-            << " Pitch: "
-            << state.pitch
-            << " Yaw: "
-            << state.yaw
-            << " LAT:" << state.lat
-            << " LON:" << state.lon
-            << " ALT:" << state.alt
-            << " BARO:" << state.pressure
-            << " AIR:" << state.airspeed
-            << " RC1:" << state.rc_channels[0]
-            << "HEARTBEAT ENVIADO" << state.flight_mode
-            << std::endl; */
-
-        usleep(100000);
-    }
-
     return 0;
 }

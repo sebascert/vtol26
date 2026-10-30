@@ -15,10 +15,18 @@ experiment live in `simulation/`.
 - Archived STM32 firmware and earlier implementation guides, kept separate from
   the current design.
 
-## What is not implemented here
+## Companion allocation boundary
 
-The versioned Pi UART/MAVLink prototype is in `companion/mavlink_uart/`, but
-there is no working PSO integration, PX4 setpoint interface, validated actuator
-mapping, Pi service configuration, or documented connection-loss response.
-The standalone PSO simulation does not connect to PX4. The prototype needs
-those pieces before it can support a hardware control test.
+The Pi UART/MAVLink application in `companion/mavlink_uart/` now links the
+shared simulation PSO, accepts local position/velocity, attitude/rates and
+airspeed telemetry, and returns nine bounded model actuator candidates.
+Results include fitness, predicted position error and a positional convergence
+flag. JSON and MAVLink `DEBUG_FLOAT_ARRAY` carry the result. A stale input
+suppresses allocation and resets the search center; UART/solver failures exit.
+An optional systemd service and Linux pseudo-terminal tests are included.
+
+This is the pose-target experiment, not a validated wrench allocator or a
+physical PX4 output interface. Model axes, rotor units, geometry, coefficients,
+actuator calibration/mapping and hardware timing/failsafe behavior remain to be
+validated. See the companion README for configuration and the precise boundary.
+The standalone simulation/visualizer remains independently buildable.

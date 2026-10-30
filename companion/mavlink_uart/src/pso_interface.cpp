@@ -1,25 +1,20 @@
 #include "pso_interface.hpp"
-#include <iostream>
 
-std::array<double, DIMENSION_ESTADO>
-PSOInterface::runPSO(const DroneState& state)
-{
-    std::array<double, DIMENSION_ESTADO> solution;
+PSOInterface::PSOInterface(const std::string& config_path, pso_runtime::RuntimeLimits limits)
+    : optimizer_(config_path), limits_(limits), center_(optimizer_.initialActuatorState()) {}
 
-    solution[0] = 1000;
-    solution[1] = 1000;
-    solution[2] = 1000;
+void PSOInterface::reset() { center_ = optimizer_.initialActuatorState(); }
 
-    solution[3] = 0.1;
-    solution[4] = 0.1;
-
-    solution[5] = 0.0;
-    solution[6] = 0.0;
-
-    solution[7] = 0.0;
-    solution[8] = 0.0;
-
-    std::cout << "PSO ejecutado" << std::endl;
-
-    return solution;
+pso_runtime::Result PSOInterface::runPSO(const DroneState& state) {
+    pso_runtime::VehicleState vehicle;
+    // shortcut: preserve the experiment's positive-up model axes; validate the full
+    // body/world frame convention before using these allocations for actuation.
+    vehicle.position = {state.local_x, state.local_y, -state.local_z};
+    vehicle.velocity = {state.velocity_x, state.velocity_y, -state.velocity_z};
+    vehicle.orientation = {state.roll, state.pitch, state.yaw};
+    vehicle.angular_rate = {state.gyro_x, state.gyro_y, state.gyro_z};
+    vehicle.airspeed_m_s = state.airspeed;
+    auto result = optimizer_.solve(vehicle, center_, limits_);
+    center_ = result.actuators;
+    return result;
 }

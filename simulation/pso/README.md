@@ -96,3 +96,14 @@ Para visualizar las partículas en 3D:
 ```bash
 python visualize_particles.py
 ```
+
+## Companion runtime
+
+`pso_runtime.hpp` exposes the same force model and swarm through a bounded,
+telemetry-driven API. Build it through `../../companion/mavlink_uart/`; that
+README documents the result contract and model limitations. Define
+`PSO_RUNTIME_ONLY` when compiling `pso_environment.cpp` as a library to omit
+the standalone entry point and visualization execution. The companion has its
+own explicit actuator bounds/config; the standalone experiment retains its
+original unbounded sampling. Per-dimension sampling amplitudes are
+`K_AM * FACTOR_MUESTREO_DIM[i]`, rather than identical across all units.

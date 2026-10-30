@@ -3,9 +3,20 @@
 #pragma once
 
 #include <cstdint>
+#include <chrono>
+#include <initializer_list>
 
 struct DroneState
 {
+    float local_x = 0, local_y = 0, local_z = 0; // LOCAL_POSITION_NED [m]
+    float velocity_x = 0, velocity_y = 0, velocity_z = 0; // NED [m/s]
+    using Clock = std::chrono::steady_clock;
+    Clock::time_point heartbeat_received{}, attitude_received{}, position_received{}, airspeed_received{};
+    bool ready(Clock::time_point now, std::chrono::milliseconds timeout) const {
+        for (auto time : {heartbeat_received, attitude_received, position_received, airspeed_received})
+            if (time == Clock::time_point{} || now - time > timeout) return false;
+        return true;
+    }
     //ATTITUDE
     float roll = 0;
     float pitch = 0;
@@ -37,7 +48,7 @@ struct DroneState
     uint16_t rc_channels[16] = {0};
 
     //Flight mode
-    uint8_t flight_mode = 0;
+    uint32_t flight_mode = 0;
 
     //Time Stamp
     uint64_t timestamp_us = 0;
