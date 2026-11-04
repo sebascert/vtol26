@@ -41,6 +41,52 @@ in this photo; reconnect the earlier USB data cable if available. The Pi's
 micro-HDMI cable is for a display and does not communicate with the Pixhawk.
 The adapter's supply rating remains unverified.
 
+## Using male–female jumpers you already have
+
+**Not directly into the white plug.** The female end fits the Pi's male
+2.54 mm GPIO pin, but a 2.54 mm jumper male pin is not a mating contact for
+the small JST-GH connector. Do not force it in.
+
+You can reuse the male–female wires with a **matching 6-pin JST-GH breakout
+with a soldered 2.54 mm male header**, inserted into a **solderless breadboard**:
+
+![Male–female jumper wiring through a matching JST-GH breakout and separate breadboard rows](../images/pi4b-pixhawk6c-male-female-jumpers.png)
+
+[Editable SVG](../images/pi4b-pixhawk6c-male-female-jumpers.svg).
+The A1–A6 positions in this schematic are an example. Put one breakout header
+pin in each separate numbered breadboard row. A–E holes within a row are joined;
+putting all six pins in one such joined group would short them together.
+Map the actual breakout contacts with a continuity check before power-up.
+
+| TELEM2 contact through breakout | Example breadboard node | Male end of jumper | Female end on Pi |
+| --- | --- | --- | --- |
+| 2 / TX | A2–E2 | E2 | Physical pin 10 / RX |
+| 3 / RX | A3–E3 | E3 | Physical pin 8 / TX |
+| 6 / GND | A6–E6 | E6 | Physical pin 6 / GND |
+
+Leave contacts 1 (+5 V), 4 and 5 without Pi jumpers, and leave breadboard power
+rails unused. Power off both computers while assembling. This is a temporary
+bench arrangement, not an aircraft harness.
+
+Parts examples checked 2026-10-30:
+
+- [6-pin JST-GH 1.25 mm breakout with 2.54 mm header](https://mktechnic.com/product/jst-gh-6-pin-1-25-horizontal-smd-pcb-adapter-breakout-board/).
+  Confirm the mating connector and whether the included header is already
+  soldered. Loose pins resting in PCB holes are not an electrical connection.
+- [Standard solderless breadboard](https://www.adafruit.com/product/64).
+- Alternative without a breadboard: [JST-GH-to-DuPont adapter cable kit](https://keszoox.com/collections/gh1-25-cable/products/jst-gh-1-25mm-to-dupont-2-54mm-adapter-cable-kit-28awg).
+  Confirm a **6-position GH housing and individual 2.54 mm female ends** are
+  included. Assemble/populate the three required positions according to the
+  TELEM2 pinout; do not assume a supplied colour order matches it.
+- If you use the earlier direct breakout arrangement instead, you need
+  [female–female 2.54 mm jumpers](https://www.adafruit.com/product/1951),
+  rather than male–female wires, between its male header and the Pi.
+
+Match **GH, 1.25 mm, 6 contacts** at the telemetry connector. JST-SH (1.0 mm),
+JST-PH (2.0 mm) and other similarly named connectors are not substitutes.
+Product links identify specifications; shipping, assembly and the actual fit
+must be checked before purchasing.
+
 ## Current hardware: photo review, 2026-10-30
 
 The owner confirms a **Raspberry Pi 4B** and **Pixhawk 6C**. The first photo

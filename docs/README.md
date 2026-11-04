@@ -9,3 +9,6 @@
 - `images/` — figures used by project documentation.
 - `archive/pre-companion-redesign/` — historical root guides and source README.
   Treat these as background; some describe the retired STM32 architecture.
+
+- [Raspberry Pi companion image and Ubuntu Ethernet/SSH setup](../companion/rasp-image/README.md) —
+  Yocto image definition, build/flash instructions and direct laptop connection.

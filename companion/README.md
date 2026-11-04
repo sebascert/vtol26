@@ -12,3 +12,6 @@ normal user to install dependencies, build/test, and enable the service.
 The output remains a model allocation result. Calibrated conversion and a
 validated physical output mapping are required before controlling actuators.
 The archived STM32/Arduino integration guides do not describe this runtime.
+
+For a dedicated Raspberry Pi 4B Yocto image with MAVLink installed and direct
+Ethernet SSH access from Ubuntu, see [`rasp-image/`](rasp-image/README.md).
