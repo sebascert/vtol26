@@ -6,7 +6,7 @@ each solve from the previous result and caps particles, iterations and external
 cycles. No visualization files are written by the runtime.
 
 For physical connections, power and matching PX4 settings, follow the
-[Raspberry Pi ↔ Pixhawk 6C wiring guide](../../docs/guides/raspberry-pi-pixhawk-6c-wiring.md).
+[Raspberry Pi ↔ Pixhawk 6C wiring guide](../../docs/gen/guides/raspberry_pi_pixhawk_6c_wiring.md).
 
 ## Build and run
 
@@ -44,6 +44,38 @@ than `--heartbeat-timeout-ms` (default 3000 ms). Non-finite telemetry invalidate
 its input immediately. A stale input suspends allocation and resets the search
 center. The companion keeps sending its own heartbeat at 1 Hz. UART failures
 and configuration/solver errors terminate with a nonzero exit status.
+
+## USB bench test on the Pi
+
+After building on the Pi as above, connect the Pixhawk's USB port to a Pi USB
+port. The [bench launcher](deploy/run-companion.sh) uses the Pixhawk 6C's USB
+device ID at 115200 baud and resolves the executable and PSO config relative
+to its own location, so it works from any working directory:
+
+```sh
+./companion/mavlink_uart/deploy/run-companion.sh
+```
+
+The user needs `dialout` membership. If the installer has not added it, run
+`sudo usermod --append --groups dialout "$USER"`, then reconnect SSH or run
+`newgrp dialout` before launching. Existing shells do not acquire new groups
+automatically. Stop the foreground test with Ctrl+C; the launcher does not
+enable a service. Use only one reader of the serial port at a time.
+
+All runtime options pass through; later options override the defaults. For
+GPIO/TELEM2, follow the wiring guide and match the Pixhawk's baud rate:
+
+```sh
+./companion/mavlink_uart/deploy/run-companion.sh --port /dev/serial0 --baud 57600
+```
+
+Use `--port` for a different USB device path, or `--pso-config` for a calibrated
+config. Changing between USB and GPIO does not require changing the PSO config.
+
+The USB path was tested on a Pi 4B running Ubuntu 22.04.5 with a PX4 Pixhawk 6C:
+both existing tests passed and 14 live allocations in 15 seconds had finite
+actuator values within the configured bounds. GPIO/TELEM2 and physical actuator
+control remain untested.
 
 ## Allocation result
 
@@ -153,7 +185,7 @@ config preservation, and stopping deployment when tests fail.
 Tests use Linux pseudo-terminals to check solver bounds, warm-start fitness,
 invalid inputs/config, source filtering, MAVLink result decoding, startup
 without telemetry, and timeout suppression through the actual executable.
-No Pi/Pixhawk hardware validation has been performed here. The recovered
+The Pi/Pixhawk USB bench validation is described above. The recovered
 `src/pso/pso_environment.cpp`, `src/pso/config_loader.hpp`, `main_backup.cpp`
 and `ActuatorCommand` experiment are excluded from the build; the runtime uses
 the shared simulation implementation instead.

@@ -22,7 +22,7 @@ The image contains:
   `/usr/bin/mavlink_uart`, `/dev/serial0` at 57600 baud, and
   `/etc/vtol/pso.json`.
 - A PL011 UART on GPIO14/15, enabled without kernel/login serial consoles;
-  Bluetooth is disabled to free that UART. The [physical wiring guide](../../docs/guides/raspberry-pi-pixhawk-6c-wiring.md)
+  Bluetooth is disabled to free that UART. The [physical wiring guide](../../docs/gen/guides/raspberry_pi_pixhawk_6c_wiring.md)
   still applies. No `raspi-config` step is required on this Yocto image.
 - systemd-networkd and a static direct Ethernet connection, with no gateway or
   DHCP requirement: **Pi `192.168.76.2/24`, laptop `192.168.76.1/24`**.
@@ -245,7 +245,7 @@ on the kernel command line. `/dev/serial0` should identify the header UART.
 A missing Pixhawk does not prevent SSH. The allocation service may initially
 restart if the UART device is not ready; with a valid UART and no telemetry it
 waits for fresh PX4 messages. Connect/configure the Pixhawk using the
-[wiring guide](../../docs/guides/raspberry-pi-pixhawk-6c-wiring.md).
+[wiring guide](../../docs/gen/guides/raspberry_pi_pixhawk_6c_wiring.md).
 
 Edit calibration/target settings with `sudo vi /etc/vtol/pso.json`, then:
 
@@ -282,7 +282,7 @@ build the full OS or prove that it boots on a physical board.
 - **Build failure:** retain the failed task's `log.do_*`, image manifest and
   source archive checksums; check matching Scarthgap layers and host dependencies.
 
-References: the supplied `Yocto_Documentation.pdf`; the example repo linked
+References: the supplied [Yocto documentation](../../docs/references/yocto_documentation.pdf); the example repo linked
 above; [meta-raspberrypi](https://github.com/agherzan/meta-raspberrypi/tree/scarthgap);
 [Yocto image customization](https://docs.yoctoproject.org/scarthgap/dev-manual/customizing-images.html);
 [systemd networking](https://www.freedesktop.org/software/systemd/man/latest/systemd.network.html).

@@ -28,6 +28,8 @@ if(BUILD_TESTING)
     target_link_libraries(allocation_test PRIVATE companion_core util)
     add_test(NAME installer COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tests/install_test.sh
         ${CMAKE_CURRENT_SOURCE_DIR}/deploy/install.sh ${CMAKE_CURRENT_BINARY_DIR})
+    add_test(NAME launcher COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_companion_test.sh
+        ${CMAKE_CURRENT_SOURCE_DIR}/deploy/run-companion.sh ${CMAKE_CURRENT_BINARY_DIR})
     add_test(NAME allocation COMMAND allocation_test ${CMAKE_CURRENT_SOURCE_DIR}/src/pso/config.json $<TARGET_FILE:mavlink_uart>)
 endif()
 
