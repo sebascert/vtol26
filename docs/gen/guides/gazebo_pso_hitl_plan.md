@@ -5,6 +5,12 @@ bridge, firmware changes, parameter changes, or simulation runs were performed
 for this document. References to PX4 `main` describe inspected upstream source,
 not the firmware currently installed on the Pixhawk.
 
+Update, 2026-11-13: the [controller firmware prototype](../../../controller/README.md)
+now builds against pinned PX4 v1.17.0, publishes validated Pi candidates to
+`pso_allocation`, and includes `pwm_out_sim` on FMUv6C. Hardware receipt,
+allocation application and the Harmonic HIL bridge remain unverified or pending.
+The original inspection below describes the earlier integration state.
+
 ## Proposed outcome
 
 **Current input clarification:** the running PSO already receives and uses PX4
@@ -12,7 +18,7 @@ telemetry: position, velocity, attitude, angular rates and airspeed. It does
 not receive PX4's demanded thrust/torque or a live PX4 target. Its pose target
 comes from the companion's startup JSON configuration. These are different
 interfaces; the missing demanded-wrench interface does not mean telemetry is
-absent. See [the actual solver call](../../../companion/mavlink_uart/src/pso_interface.cpp).
+absent. See [the actual solver call](../../../companion/allocator/src/pso_interface.cpp).
 
 Run vehicle physics on the Ubuntu laptop, PX4 on the real Pixhawk, and PSO on
 the real Raspberry Pi. Send a target, record what PX4 actually accepts and
@@ -36,21 +42,22 @@ steps; add transition and forward flight after the hover model works.
 
 ## What was inspected
 
-The requested `~/project/vtol/pvtol_gz` was found at
-[`/home/sebastian/projects/vtol/pvtol_gz`](/home/sebastian/projects/vtol/pvtol_gz).
-It was inspected read-only. This plan belongs to `vtol26`; changes to that
-separate reference repository are not part of this task.
+The initial reference was inspected read-only at `~/projects/vtol/pvtol_gz`.
+Its source and model assets have since been copied into
+[`simulation/`](../../../simulation/README.md) in this workspace; the original
+reference repository remains unchanged. The source links below point to that
+local copy. This reorganization does not implement the proposed HIL interfaces.
 
 | Evidence | Finding and implication |
 | --- | --- |
-| [Companion main loop](../../../companion/mavlink_uart/src/main.cpp), [defaults](../../../companion/mavlink_uart/src/application_config.hpp) | Consumes PX4 telemetry, solves at a default period of 1000 ms, and emits candidates. A one-second solve period is a bench setting, not an established flight-control rate. |
-| [MAVLink sender](../../../companion/mavlink_uart/src/mavlink_sender.cpp) | Sends `DEBUG_FLOAT_ARRAY`, named `PSO_ALLOC`. It does not command PX4 actuators. |
-| [PSO API](../../../simulation/pso/pso_runtime.hpp), [configuration](../../../companion/mavlink_uart/src/pso/config.json) | Optimizes nine actuator values against a startup pose target. No online target-update or demanded-wrench API exists in this runtime. |
-| [Telemetry conversion](../../../companion/mavlink_uart/src/pso_interface.cpp) | Negates NED Z/VZ but passes attitude and body rates through. A complete frame convention is still unresolved. |
-| [Gazebo build](</home/sebastian/projects/vtol/pvtol_gz/CMakeLists.txt>) | Requires `gz-sim8`: modern Gazebo Harmonic. The inspected laptop runs Ubuntu 24.04.5 and reports Gazebo Sim 8.15.0. |
-| [Gazebo controller](</home/sebastian/projects/vtol/pvtol_gz/src/pvtol_controller.cc>) | Reads simulated ground truth, runs its own quaternion controller, and calls `AddWorldWrench` with ideal thrust and torque. There is no MAVLink endpoint. |
-| [Gazebo model](</home/sebastian/projects/vtol/pvtol_gz/models/stallion_vtol/model.sdf>) | One rigid body with visual meshes, a spherical collision, and an autonomous controller plugin. No actuator joints or sensor elements. Meshes alone do not model motor, servo, or aerodynamic behavior. |
-| [Gazebo world](</home/sebastian/projects/vtol/pvtol_gz/worlds/pvtol.sdf>) | Uses a 1 ms physics step and requests real-time factor 1.0. Starts at `(8,-6,1)`; the model's local controller targets `(0,0,3.5)`. |
+| [Companion main loop](../../../companion/allocator/src/main.cpp), [defaults](../../../companion/allocator/src/application_config.hpp) | Consumes PX4 telemetry, solves at a default period of 1000 ms, and emits candidates. A one-second solve period is a bench setting, not an established flight-control rate. |
+| [MAVLink sender](../../../companion/allocator/src/mavlink_sender.cpp) | Sends `DEBUG_FLOAT_ARRAY`, named `PSO_ALLOC`. It does not command PX4 actuators. |
+| [PSO API](../../../companion/allocator/src/pso/pso_runtime.hpp), [configuration](../../../companion/allocator/src/pso/config.json) | Optimizes nine actuator values against a startup pose target. No online target-update or demanded-wrench API exists in this runtime. |
+| [Telemetry conversion](../../../companion/allocator/src/pso_interface.cpp) | Negates NED Z/VZ but passes attitude and body rates through. A complete frame convention is still unresolved. |
+| [Gazebo build](<../../../simulation/CMakeLists.txt>) | Requires `gz-sim8`: modern Gazebo Harmonic. The inspected laptop runs Ubuntu 24.04.5 and reports Gazebo Sim 8.15.0. |
+| [Gazebo controller](<../../../simulation/src/pvtol_controller.cc>) | Reads simulated ground truth, runs its own quaternion controller, and calls `AddWorldWrench` with ideal thrust and torque. There is no MAVLink endpoint. |
+| [Gazebo model](<../../../simulation/models/stallion_vtol/model.sdf>) | One rigid body with visual meshes, a spherical collision, and an autonomous controller plugin. No actuator joints or sensor elements. Meshes alone do not model motor, servo, or aerodynamic behavior. |
+| [Gazebo world](<../../../simulation/worlds/pvtol.sdf>) | Uses a 1 ms physics step and requests real-time factor 1.0. Starts at `(8,-6,1)`; the model's local controller targets `(0,0,3.5)`. |
 | USB bench test earlier in this session | Pi Ubuntu 22.04.5, Pixhawk USB, 14 allocations in 15 seconds, finite values within bounds. This verified telemetry and numerical execution, not HIL or actuator application. |
 
 Upstream PX4 currently handles `DEBUG_FLOAT_ARRAY` as a debug topic. An
@@ -64,7 +71,7 @@ separate implementations and do not establish the same integration status:
 
 | Implementation | Input actually used | Output/integration status |
 | --- | --- | --- |
-| Current `companion/mavlink_uart` | Live PX4 state telemetry plus the startup pose target; [state values are passed into `optimizer_.solve`](../../../companion/mavlink_uart/src/pso_interface.cpp) | Runs the shared PSO and transmits diagnostic candidates. No PX4 demanded-wrench input or actuator application. |
+| Current `companion/allocator` | Live PX4 state telemetry plus the startup pose target; [state values are passed into `optimizer_.solve`](../../../companion/allocator/src/pso_interface.cpp) | Runs the shared PSO and transmits diagnostic candidates. No PX4 demanded-wrench input or actuator application. |
 | [`legacy/mavlink_uart`](../../../legacy/mavlink_uart/src/main.cpp) | The receiver decodes PX4 telemetry and passes `DroneState` to `runPSO`, but [`runPSO` ignores that argument](../../../legacy/mavlink_uart/src/pso_interface.cpp) | Returns hardcoded values `[1000,1000,1000,0.1,0.1,0,0,0,0]`. [`sendPSOCommand`](../../../legacy/mavlink_uart/src/mavlink_sender.cpp) only prints them; it does not encode/write actuator results over MAVLink. Its heartbeat sender is separate. |
 | [`legacy/vtol_integrador/sim/PSO`](../../../legacy/vtol_integrador/sim/PSO/pso_environment.cpp) | Standalone model/configuration, with internally initialized state; no live PX4 telemetry interface | Contains the swarm experiment, not a complete Pi/PX4 runtime. Its README's intended architecture is not evidence of a working command link. |
 | [`legacy/stm32-firmware`](../../../legacy/stm32-firmware/src/scheduler.cpp) | A local quaternion controller supplies roll/pitch/yaw torque and thrust to `allocator_->solve` | This is the older standalone STM32 architecture, not PX4. [`PSO_Allocator::solve`](../../../legacy/stm32-firmware/src/pso_allocator.cpp) calls `solve_simple`, a hand-coded mixer rather than a particle-swarm optimizer. |
@@ -465,12 +472,12 @@ These are proposed locations, not files created by this planning task:
 | Area | Smallest complete change |
 | --- | --- |
 | `simulation/gazebo/` | Project-owned world/model, nine-actuator plant, simulated sensors, external HIL adapter, launch/config files, mapping/frame tests and recording tools; bring over only the reference assets actually needed and record provenance. |
-| `companion/mavlink_uart/src/` | Selected target/demand receiver, typed result envelope, state/deadline handling and diagnostic timing; UDP transport only if keeping Pi-owned USB. |
-| `simulation/pso/pso_runtime.hpp` and implementation | Demanded-wrench solve interface/objective if allocator mode is chosen; preserve the standalone pose-target API/callers or update them explicitly. |
-| `companion/mavlink_uart/src/pso/config.json` | A separate declared HIL model/calibration and limits, rather than silently replacing aircraft parameters. |
-| `companion/mavlink_uart/tests/`, build files | Contract round trips, limits, expiry/replay, target/demand changes and source filtering; include the existing PTY regression tests. |
+| `companion/allocator/src/` | Selected target/demand receiver, typed result envelope, state/deadline handling and diagnostic timing; UDP transport only if keeping Pi-owned USB. |
+| `companion/allocator/src/pso/pso_runtime.hpp` and implementation | Demanded-wrench solve interface/objective if allocator mode is chosen; preserve the standalone pose-target API/callers or update them explicitly. |
+| `companion/allocator/src/pso/config.json` | A separate declared HIL model/calibration and limits, rather than silently replacing aircraft parameters. |
+| `companion/allocator/tests/`, build files | Contract round trips, limits, expiry/replay, target/demand changes and source filtering; include the existing PTY regression tests. |
 | Project-owned PX4 integration directory, e.g. `firmware/px4/` | Version manifest, board/airframe config, message definitions and source patch/module for validated PSO application. Build the matching supplied PX4 source; keep upstream third-party code in build inputs rather than vendoring a reference tree. |
-| `companion/rasp-image/` and deployment guide | Include the eventual runtime/config/protocol assets and selected port/rate, plus reproducible launch instructions. Do not leave a working HIL setup only in an ad hoc Pi directory. |
+| `companion/image/` and deployment guide | Include the eventual runtime/config/protocol assets and selected port/rate, plus reproducible launch instructions. Do not leave a working HIL setup only in an ad hoc Pi directory. |
 
 No full ROS stack, GUI dashboard, detailed servo animations or physical PWM
 capture is necessary for the first complete logical HIL loop. Source acquisition

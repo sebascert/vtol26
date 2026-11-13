@@ -6,11 +6,18 @@ grouped under `gen/`; original PDFs and resource links are organized separately.
 
 ## Technical documentation
 
+- Active source layout: [Pi image](../companion/image/README.md),
+  [self-contained allocator](../companion/allocator/README.md),
+  [PX4 controller integration](../controller/README.md) and
+  [Gazebo simulation](../simulation/README.md). Standalone PSO, Simulink and CAD
+  references are archived under `legacy/`.
 - [Project progress — study and presentation guide](gen/guides/project_progress_study_guide.md)
   — implementation walkthrough, bench evidence, output interpretation, remaining
   milestones and a ten-minute presentation plan.
 - [System overview](gen/architecture/system_overview.md) — intended hardware/software
   architecture and implementation status.
+- [Pixhawk 6C firmware and PSO reception](../controller/README.md) — pinned PX4,
+  build instructions, diagnostic packet contract, bench proof and Harmonic HIL boundary.
 - [Raspberry Pi ↔ Pixhawk 6C wiring](gen/guides/raspberry_pi_pixhawk_6c_wiring.md) —
   physical pinout, separate power, UART/PX4 setup and bench checks.
 - [Gazebo PSO HIL plan](gen/guides/gazebo_pso_hitl_plan.md) — inspected interfaces,
@@ -25,7 +32,7 @@ grouped under `gen/`; original PDFs and resource links are organized separately.
   guides, source README and architecture review. These describe an older design;
   use the system overview above for the current architecture.
 - `gen/images/` — PNG and editable SVG figures used by the wiring guide.
-- [Raspberry Pi companion image and Ubuntu Ethernet/SSH setup](../companion/rasp-image/README.md)
+- [Raspberry Pi companion image and Ubuntu Ethernet/SSH setup](../companion/image/README.md)
   — Yocto image definition, build/flash instructions and direct laptop connection.
 
 ## Original documents and resources

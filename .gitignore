@@ -24,11 +24,12 @@ Makefile
 *.elf
 *.bin
 *.exe
-/simulation/pso/pso_environment
+/legacy/simulation/pso/pso_environment
 
-# Generated PSO output (example data is kept under simulation/pso/examples/)
-/simulation/pso/pso_data.json
-/simulation/pso/particles.csv
+# Generated output from the archived standalone PSO experiment
+/legacy/simulation/pso/pso_data.json
+/legacy/simulation/pso/particles.csv
+/simulation/compile_commands.json
 
 # MATLAB / Simulink generated files
 **/slprj/

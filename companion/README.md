@@ -1,17 +1,11 @@
-# Raspberry Pi companion application
+# Raspberry Pi companion
 
-[`mavlink_uart/`](mavlink_uart/) builds a Linux/Raspberry Pi C++17 application
-that receives PX4 telemetry over UART, runs the shared PSO implementation in
-`../simulation/pso/`, and returns nine bounded actuator candidates as JSON and
-MAVLink diagnostic data. It requires fresh telemetry and suspends allocation
-on timeout. Build, configuration, output format, tests and optional service
-instructions are in that directory's README. On Raspberry Pi OS, run
-`./companion/mavlink_uart/deploy/install.sh` from the repository root as your
-normal user to install dependencies, build/test, and enable the service.
+- [`allocator/`](allocator/README.md): self-contained PSO and MAVLink application.
+  The active solver, state types, parser and calibration live in `allocator/src/pso/`.
+- [`image/`](image/README.md): Raspberry Pi 4B Yocto image definition, direct
+  Ethernet/SSH settings and allocator packaging.
 
-The output remains a model allocation result. Calibrated conversion and a
-validated physical output mapping are required before controlling actuators.
-The archived STM32/Arduino integration guides do not describe this runtime.
-
-For a dedicated Raspberry Pi 4B Yocto image with MAVLink installed and direct
-Ethernet SSH access from Ubuntu, see [`rasp-image/`](rasp-image/README.md).
+The allocator needs fresh PX4 telemetry and returns bounded model candidates
+as JSON and MAVLink diagnostics. It currently has no physical actuator output
+mapping. The planned PX4-side integration belongs in [`controller/`](../controller/README.md),
+and Gazebo code belongs in [`simulation/`](../simulation/README.md).

@@ -2,15 +2,15 @@
 
 Reviewed: 2026-10-30. Target: **Raspberry Pi 4 Model B with Raspberry Pi OS**, a
 **Holybro Pixhawk 6C running PX4**, and this repository's
-[`mavlink_uart` companion](../../../companion/mavlink_uart/README.md).
+[`vtol_allocator` companion](../../../companion/allocator/README.md).
 Record your actual board revision and PX4 version before following the guide;
 parameter availability and menus can differ between firmware releases.
 
 The connection is a three-wire, **3.3 V TTL UART** link from the Pixhawk's
 **TELEM2** connector to the Pi's 40-pin GPIO header. The repository currently
 uses `/dev/serial0`, **57600 baud, 8N1, no hardware flow control**. These settings
-come from the [service](../../../companion/mavlink_uart/deploy/mavlink-uart@.service)
-and [serial configuration](../../../companion/mavlink_uart/src/serial_port.hpp).
+come from the [service](../../../companion/allocator/deploy/vtol_allocator@.service)
+and [serial configuration](../../../companion/allocator/src/serial_port.hpp).
 
 This establishes telemetry reception and allocation reporting. The companion
 returns JSON and MAVLink `DEBUG_FLOAT_ARRAY`; it does not drive physical motor
@@ -301,7 +301,7 @@ Stream commands configure the running instance; **repeat them after a Pixhawk
 reboot** unless you have separately made the stream setup persistent. This
 repository's installer does not configure PX4 streams.
 
-The [current receiver](../../../companion/mavlink_uart/src/mavlink_receiver.cpp)
+The [current receiver](../../../companion/allocator/src/mavlink_receiver.cpp)
 needs all four messages from the selected PX4 system/component. GPS alone is
 not a substitute for `LOCAL_POSITION_NED`. Without a valid local estimate or an
 available airspeed/HUD publication, the application can wait even when the
@@ -313,14 +313,14 @@ Do not disable estimator/pre-arm checks to make the bench test produce output.
 From the repository root **on the Pi**, as your normal user:
 
 ```sh
-./companion/mavlink_uart/deploy/install.sh
-systemctl status "mavlink-uart@$USER.service"
-journalctl -u "mavlink-uart@$USER.service" -f
+./companion/allocator/deploy/install.sh
+systemctl status "vtol_allocator@$USER.service"
+journalctl -u "vtol_allocator@$USER.service" -f
 ```
 
 The installer builds/tests, grants `dialout` access, preserves an existing PSO
 config and enables the service. It starts it if `/dev/serial0` exists. Full
-[installation details](../../../companion/mavlink_uart/README.md#install-on-raspberry-pi-os)
+[installation details](../../../companion/allocator/README.md#install-on-raspberry-pi-os)
 include the installed config path. The installer does not change Pi UART boot
 settings or Pixhawk parameters.
 
@@ -328,8 +328,8 @@ For a foreground check, stop the service first so only one program reads the
 UART, then run the installed application:
 
 ```sh
-sudo systemctl stop "mavlink-uart@$USER.service"
-/usr/local/bin/mavlink_uart --port /dev/serial0 --baud 57600 \
+sudo systemctl stop "vtol_allocator@$USER.service"
+/usr/local/bin/vtol_allocator --port /dev/serial0 --baud 57600 \
   --pso-config /usr/local/share/vtol26/companion/mavlink_uart/src/pso/config.json
 ```
 
@@ -337,7 +337,7 @@ Log out/in first if your newly added `dialout` membership is not active in this
 shell. After testing, press Ctrl+C and restart the service:
 
 ```sh
-sudo systemctl start "mavlink-uart@$USER.service"
+sudo systemctl start "vtol_allocator@$USER.service"
 ```
 
 A successful receive path produces JSON allocation records, normally about

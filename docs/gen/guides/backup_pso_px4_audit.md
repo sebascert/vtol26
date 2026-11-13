@@ -142,7 +142,7 @@ equality evidence; the per-file content comparison establishes that equality.
 Archive packaging metadata is not used to infer a firmware source change.
 
 Machine-readable results and complete file-hash manifests are retained locally
-under the ignored `companion/mavlink_uart/build/px4-upstream-audit/` directory as
+under the ignored `companion/allocator/build/px4-upstream-audit/` directory as
 `comparison.json`, `upstream-sha256.json` and `legacy-sha256.json`. No Git clone,
 fetch, checkout or repository modification was used for this comparison.
 

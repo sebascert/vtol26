@@ -1,0 +1,20 @@
+[Unit]
+Description=Raspberry Pi MAVLink telemetry and PSO allocation reporting for user %i
+After=local-fs.target
+
+[Service]
+Type=simple
+User=%i
+SupplementaryGroups=dialout
+ExecStart=/usr/local/bin/vtol_allocator --port /dev/serial0 --baud 57600 --loop-ms 20 --heartbeat-timeout-ms 3000 --pso-config /usr/local/share/vtol26/companion/mavlink_uart/src/pso/config.json --pso-period-ms 1000 --pso-max-particles 16 --pso-max-iterations 5 --pso-external-cycles 1
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

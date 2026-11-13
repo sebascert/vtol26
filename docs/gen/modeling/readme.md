@@ -4,17 +4,17 @@ Este espacio documenta el modelo dinamico del vehiculo y su implementacion simbo
 
 ## Estado actual
 
-- Implementacion base en `simulation/simulink/fuerzas_v4.m`.
+- Implementacion base en `legacy/simulation/simulink/fuerzas_v4.m`.
 - Fuerzas aerodinamicas y de propulsion en marco cuerpo mediante rotaciones por cuaternion.
 - Momentos totales modelados como:
   - suma de contribuciones `r_i x F_i` para cada superficie/actuador,
   - mas un termino de momentos directos `M_directo` (reaccion de rotor u otros efectos no representados por brazo de palanca).
 - Plantilla de planta Simulink disponible:
-  - `simulation/simulink/construir_planta_vtol.m`
-  - `simulation/simulink/modelo_fuerzas_momentos_vtol.m`
-  - `simulation/simulink/crear_parametros_vtol.m`
-  - `simulation/simulink/simular_y_graficar_vtol.m`
-  - `simulation/simulink/dashboard_vtol.m`
+  - `legacy/simulation/simulink/construir_planta_vtol.m`
+  - `legacy/simulation/simulink/modelo_fuerzas_momentos_vtol.m`
+  - `legacy/simulation/simulink/crear_parametros_vtol.m`
+  - `legacy/simulation/simulink/simular_y_graficar_vtol.m`
+  - `legacy/simulation/simulink/dashboard_vtol.m`
 
 ## Visualizacion rapida
 

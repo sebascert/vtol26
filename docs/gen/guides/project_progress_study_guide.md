@@ -4,6 +4,11 @@ Status snapshot: **4 November 2026**. Read this alongside the
 [system overview](../architecture/system_overview.md) and the existing
 [PSO/PX4 integration presentation](../../presentations/pso_px4_integration_gap.md).
 
+Source links were updated for the component reorganization: the PSO runtime is
+now owned by `companion/allocator/src/pso/`, the Pi image by `companion/image/`,
+Gazebo by `simulation/`, and future PX4 patches by `controller/`. The dated test
+and build observations below remain historical evidence, not a new validation.
+
 The main advance is a working path from live PX4 telemetry to actual particle
 swarm optimization and bounded nine-value actuator candidates. That path has
 been exercised over USB on the laptop and is also documented as tested on the
@@ -34,7 +39,7 @@ A useful opening statement for a presentation is:
 > actuator pipeline and validating the aircraft model are the next milestones.
 
 Sources: [project README](../../../README.md),
-[companion README](../../../companion/mavlink_uart/README.md).
+[companion README](../../../companion/allocator/README.md).
 
 ## 2. Understand the three different kinds of information
 
@@ -54,9 +59,9 @@ Today there is also no implementation that converts the diagnostic result into
 accepted PX4 motor or servo outputs. A successful numerical allocation does
 not establish that PX4 applied it.
 
-Sources: [state adapter](../../../companion/mavlink_uart/src/pso_interface.cpp),
-[optimizer API](../../../simulation/pso/pso_runtime.hpp),
-[actual sender](../../../companion/mavlink_uart/src/mavlink_sender.cpp).
+Sources: [state adapter](../../../companion/allocator/src/pso_interface.cpp),
+[optimizer API](../../../companion/allocator/src/pso/pso_runtime.hpp),
+[actual sender](../../../companion/allocator/src/mavlink_sender.cpp).
 
 ## 3. Architecture: what runs where
 
@@ -99,7 +104,7 @@ does not validate that GPIO wiring.
 | --- | --- | --- |
 | Companion optimization | The recovered legacy MAVLink adapter returned fixed values. | Live state is passed to the shared PSO solver. |
 | Result transport | The legacy allocation sender printed values. | The active sender encodes and writes MAVLink diagnostic allocations. |
-| Reuse | The standalone swarm and companion were separate paths. | CMake compiles the shared simulation source as a runtime library using `PSO_RUNTIME_ONLY`. |
+| Reuse | The standalone swarm and companion were separate paths. | CMake compiles the runtime in `companion/allocator/src/pso/` using `PSO_RUNTIME_ONLY`; the earlier standalone experiment is archived. |
 | Input handling | Merely receiving some telemetry was insufficient evidence. | Four required messages, source selection, numeric checks and freshness gates are explicit. |
 | Output handling | A function name could suggest physical control without implementing it. | The output contract identifies nine model values and their diagnostic meaning. |
 | Dependencies | Unchanged MAVLink headers had been copied into the project. | The active build downloads a pinned, SHA-256-checked upstream archive. |
@@ -112,7 +117,7 @@ different controller and actuator interface. The audit did not recover a
 complete Raspberry Pi/PX4 actuator-control integration within the material
 examined.
 
-Sources: [active build](../../../companion/mavlink_uart/CMakeLists.txt),
+Sources: [active build](../../../companion/allocator/CMakeLists.txt),
 [legacy fixed adapter](../../../legacy/mavlink_uart/src/pso_interface.cpp),
 [legacy sender](../../../legacy/mavlink_uart/src/mavlink_sender.cpp),
 [backup findings](backup_pso_px4_audit.md).
@@ -151,10 +156,10 @@ These observed rates were adequate for the default three-second freshness
 window. They are bench observations, not a required or validated flight-control
 rate specification. GPS altitude is not substituted for local position.
 
-Sources: [main loop](../../../companion/mavlink_uart/src/main.cpp),
-[receiver](../../../companion/mavlink_uart/src/mavlink_receiver.cpp),
-[freshness state](../../../companion/mavlink_uart/src/drone_state.hpp),
-[adapter](../../../companion/mavlink_uart/src/pso_interface.cpp).
+Sources: [main loop](../../../companion/allocator/src/main.cpp),
+[receiver](../../../companion/allocator/src/mavlink_receiver.cpp),
+[freshness state](../../../companion/allocator/src/drone_state.hpp),
+[adapter](../../../companion/allocator/src/pso_interface.cpp).
 
 ## 6. Understand PSO without confusing it with vehicle motion
 
@@ -209,10 +214,10 @@ Keep these three time scales separate:
 Neither the 97 evaluations nor the one-second scheduling interval establishes
 a flight-suitable latency bound. Pi execution-time measurements are still needed.
 
-Sources: [solver and model](../../../simulation/pso/pso_environment.cpp),
-[sampling state](../../../simulation/pso/pso_state.hpp),
-[runtime defaults](../../../companion/mavlink_uart/src/application_config.hpp),
-[companion configuration](../../../companion/mavlink_uart/src/pso/config.json).
+Sources: [solver and model](../../../companion/allocator/src/pso/pso_environment.cpp),
+[sampling state](../../../companion/allocator/src/pso/pso_state.hpp),
+[runtime defaults](../../../companion/allocator/src/application_config.hpp),
+[companion configuration](../../../companion/allocator/src/pso/config.json).
 
 ## 7. Read and explain the actual output
 
@@ -250,9 +255,9 @@ In a presentation, describe these as **finite, bounded model candidates**.
 Physical validity, global optimality and closed-loop stability require further
 evidence.
 
-Sources: [output contract](../../../companion/mavlink_uart/README.md#allocation-result),
-[MAVLink encoding](../../../companion/mavlink_uart/src/mavlink_sender.cpp),
-[configured target and bounds](../../../companion/mavlink_uart/src/pso/config.json).
+Sources: [output contract](../../../companion/allocator/README.md#allocation-result),
+[MAVLink encoding](../../../companion/allocator/src/mavlink_sender.cpp),
+[configured target and bounds](../../../companion/allocator/src/pso/config.json).
 
 ## 8. Evidence: what has actually been demonstrated
 
@@ -270,11 +275,11 @@ and allocation tests. Its fixture checks executable/config resolution from a
 different directory and argument forwarding. Avoid treating older two-test
 logs as evidence that every subsequently added test has run.
 
-Tests and records: [allocation test](../../../companion/mavlink_uart/tests/allocation_test.cpp),
-[installer smoke test](../../../companion/mavlink_uart/tests/install_test.sh),
-[launcher test](../../../companion/mavlink_uart/tests/run_companion_test.sh),
-[image tests](../../../companion/rasp-image/tests/test_image.py),
-[Pi bench record](../../../companion/mavlink_uart/README.md#usb-bench-test-on-the-pi).
+Tests and records: [allocation test](../../../companion/allocator/tests/allocation_test.cpp),
+[installer smoke test](../../../companion/allocator/tests/install_test.sh),
+[launcher test](../../../companion/allocator/tests/run_companion_test.sh),
+[image tests](../../../companion/image/tests/test_image.py),
+[Pi bench record](../../../companion/allocator/README.md#usb-bench-test-on-the-pi).
 
 For future presentations, retain raw timestamped allocation logs, firmware
 version, model configuration and exact test commands together. Screenshots
@@ -291,8 +296,8 @@ There are three useful deployment paths:
 | Raspberry Pi OS installer | Install dependencies, build/test, preserve existing calibration and enable a user service. | GPIO UART `/dev/serial0` at 57600 baud. |
 | Dedicated Yocto image | Preinstall the application, Ethernet, SSH and service configuration. | Same GPIO UART default; Ethernet manages the Pi. |
 
-The [installer](../../../companion/mavlink_uart/deploy/install.sh) and
-[USB launcher](../../../companion/mavlink_uart/deploy/run-companion.sh) serve
+The [installer](../../../companion/allocator/deploy/install.sh) and
+[USB launcher](../../../companion/allocator/deploy/run-companion.sh) serve
 different purposes. The launcher does not enable a boot service. The image
 uses its own recipe and install paths rather than running the apt installer.
 
@@ -318,7 +323,7 @@ For the future flashed image, run from the repository root:
 
 ```sh
 ssh -o IdentitiesOnly=yes \
-  -i companion/rasp-image/build/ssh/id_ed25519 vtol@192.168.76.2
+  -i companion/image/build/ssh/id_ed25519 vtol@192.168.76.2
 ```
 
 There is no configured image password. Keep the matching private key on the
@@ -337,19 +342,21 @@ Useful local checks, from the repository root:
 
 ```sh
 systemctl --user status vtol-image-build.service
-tail -n 30 companion/rasp-image/build/image-build.log
-ls companion/rasp-image/build/yocto/tmp/deploy/images/raspberrypi4-64/
+tail -n 30 companion/image/build/previous-image-build.log
+ls companion/image/build/yocto/tmp/deploy/images/raspberrypi4-64/
 ```
 
 Completion evidence must include a successful BitBake summary, the compressed
 WIC image and image manifest, followed by Pi boot and SSH tests on that image.
 A task counter is not a percentage of time remaining.
+The `previous-image-build.log` file is retained evidence from the earlier build;
+fresh builds under the reorganized image directory need a new log.
 
-Sources: [full image guide](../../../companion/rasp-image/README.md),
-[network file](../../../companion/rasp-image/meta-vtol/recipes-core/vtol-config/files/10-vtol-ethernet.network),
-[user/key installation](../../../companion/rasp-image/meta-vtol/recipes-core/vtol-config/vtol-config.bb),
-[SSH policy](../../../companion/rasp-image/meta-vtol/recipes-connectivity/openssh/files/sshd_config),
-[network service enablement](../../../companion/rasp-image/meta-vtol/recipes-core/systemd/systemd_%.bbappend).
+Sources: [full image guide](../../../companion/image/README.md),
+[network file](../../../companion/image/meta-vtol/recipes-core/vtol-config/files/10-vtol-ethernet.network),
+[user/key installation](../../../companion/image/meta-vtol/recipes-core/vtol-config/vtol-config.bb),
+[SSH policy](../../../companion/image/meta-vtol/recipes-connectivity/openssh/files/sshd_config),
+[network service enablement](../../../companion/image/meta-vtol/recipes-core/systemd/systemd_%.bbappend).
 
 ## 10. The engineering gaps to explain clearly
 
@@ -423,7 +430,7 @@ A suitable closing statement is:
 
 For a live demonstration, keep actuator power disconnected, use one reader of
 the serial port, and show the actual input streams and JSON. Use the existing
-[bench instructions](../../../companion/mavlink_uart/README.md#usb-bench-test-on-the-pi)
+[bench instructions](../../../companion/allocator/README.md#usb-bench-test-on-the-pi)
 for the commands. If telemetry is unavailable, identify the automated test as
 a synthetic-input test rather than presenting it as a live hardware result.
 
@@ -456,12 +463,12 @@ Use the following milestones to turn the remaining work into reviewable results:
 5. **Closed-loop simulation/HIL:** demonstrate the complete response through
    the selected plant and bridge with predefined tracking and latency criteria.
 
-For deeper reading, start with the [main loop](../../../companion/mavlink_uart/src/main.cpp),
-then the [state adapter](../../../companion/mavlink_uart/src/pso_interface.cpp),
-[runtime API](../../../simulation/pso/pso_runtime.hpp),
-[solver](../../../simulation/pso/pso_environment.cpp),
-[configuration](../../../companion/mavlink_uart/src/pso/config.json) and
-[sender](../../../companion/mavlink_uart/src/mavlink_sender.cpp). Finish with the
+For deeper reading, start with the [main loop](../../../companion/allocator/src/main.cpp),
+then the [state adapter](../../../companion/allocator/src/pso_interface.cpp),
+[runtime API](../../../companion/allocator/src/pso/pso_runtime.hpp),
+[solver](../../../companion/allocator/src/pso/pso_environment.cpp),
+[configuration](../../../companion/allocator/src/pso/config.json) and
+[sender](../../../companion/allocator/src/mavlink_sender.cpp). Finish with the
 [HIL acceptance plan](gazebo_pso_hitl_plan.md#implementation-milestones-and-pass-criteria)
 and [historical audit](backup_pso_px4_audit.md) to understand which earlier
 components can inform the remaining design.

@@ -40,8 +40,8 @@ PX4 telemetry ──> Raspberry Pi ──> actual PSO ──> nine candidates
 
 **The missing interface concerns controller demands and actuator application.**
 
-Sources: [State passed to the optimizer](../../companion/mavlink_uart/src/pso_interface.cpp#L8)
-· [Runtime freshness checks](../../companion/mavlink_uart/src/main.cpp#L46)
+Sources: [State passed to the optimizer](../../companion/allocator/src/pso_interface.cpp#L8)
+· [Runtime freshness checks](../../companion/allocator/src/main.cpp#L46)
 
 ---
 
@@ -56,9 +56,9 @@ Sources: [State passed to the optimizer](../../companion/mavlink_uart/src/pso_in
 The current objective selects actuators against a pose target.
 It is not yet an allocator tracking PX4 thrust/torque demands.
 
-Sources: [Optimizer input API](../../simulation/pso/pso_runtime.hpp)
-· [Target configuration](../../companion/mavlink_uart/src/pso/config.json)
-· [Input conversion](../../companion/mavlink_uart/src/pso_interface.cpp)
+Sources: [Optimizer input API](../../companion/allocator/src/pso/pso_runtime.hpp)
+· [Target configuration](../../companion/allocator/src/pso/config.json)
+· [Input conversion](../../companion/allocator/src/pso_interface.cpp)
 
 ---
 
@@ -77,8 +77,8 @@ data: nine candidates + fitness/convergence diagnostics
 Allocation JSON confirms computation. It does not demonstrate that PX4
 accepted the values or changed its motor/servo outputs.
 
-Sources: [Actual message encoding](../../companion/mavlink_uart/src/mavlink_sender.cpp#L46)
-· [Documented output contract](../../companion/mavlink_uart/README.md#allocation-result)
+Sources: [Actual message encoding](../../companion/allocator/src/mavlink_sender.cpp#L46)
+· [Documented output contract](../../companion/allocator/README.md#allocation-result)
 
 ---
 
@@ -146,7 +146,7 @@ This is a design recommendation. The current pose-target solver does not
 implement the first option yet.
 
 Sources: [Architecture choices](../gen/guides/gazebo_pso_hitl_plan.md#decide-what-pso-means-in-this-experiment)
-· [Current solver contract](../../simulation/pso/pso_runtime.hpp)
+· [Current solver contract](../../companion/allocator/src/pso/pso_runtime.hpp)
 
 ---
 
@@ -183,8 +183,8 @@ Source: [Detailed HIL interfaces and milestones](../gen/guides/gazebo_pso_hitl_p
 Choose a consistent physical model, benchmark Pi latency, and define a
 failure policy before evaluating closed-loop tracking.
 
-Sources: [Model coefficients and bounds](../../companion/mavlink_uart/src/pso/config.json)
-· [Timing defaults](../../companion/mavlink_uart/src/application_config.hpp#L5)
+Sources: [Model coefficients and bounds](../../companion/allocator/src/pso/config.json)
+· [Timing defaults](../../companion/allocator/src/application_config.hpp#L5)
 · [Model and timing analysis](../gen/guides/gazebo_pso_hitl_plan.md#vehicle-physics-and-frames-must-agree)
 
 ---

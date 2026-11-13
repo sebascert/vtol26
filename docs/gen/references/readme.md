@@ -10,4 +10,4 @@ Documentos externos que inspiran o respaldan la implementacion.
 - [yocto_documentation.pdf](../../references/yocto_documentation.pdf)
   - Referencia suministrada para la imagen Linux de la Raspberry Pi.
   - La implementacion actual se documenta en la
-    [guia de la imagen companion](../../../companion/rasp-image/README.md).
+    [guia de la imagen companion](../../../companion/image/README.md).
