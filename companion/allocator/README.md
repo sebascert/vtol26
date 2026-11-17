@@ -16,8 +16,7 @@ From the repository root on Linux (including Raspberry Pi OS), with CMake
 3.14 or newer and a C++17 compiler:
 
 ```sh
-cmake -S companion/allocator -B companion/allocator/build -DCMAKE_BUILD_TYPE=Release
-cmake --build companion/allocator/build -j2
+./companion/allocator/build.sh
 ctest --test-dir companion/allocator/build --output-on-failure
 ./companion/allocator/build/vtol_allocator --port /dev/serial0 --baud 57600 \
   --pso-config companion/allocator/src/pso/config.json
@@ -31,7 +30,7 @@ For offline builds, provide an extracted copy of that revision with
 `-DFETCHCONTENT_SOURCE_DIR_MAVLINK=/absolute/path/to/c_library_v2` when configuring.
 
 The directory can also be copied on its own and built with
-`cmake -S . -B build` from that copy. `--help` lists timing and solver budget
+`./build.sh` from that copy. The executable's `--help` lists timing and solver budget
 options. The default config path is `src/pso/config.json`, relative to the
 allocator directory; use `--pso-config` from other working directories. The
 bench launcher resolves an absolute config path automatically.

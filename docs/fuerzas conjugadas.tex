@@ -1,0 +1,81 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+
+\geometry{a4paper, margin=1in}
+
+\begin{document}
+
+\begin{equation*}
+\label{eq:fuerzas_totales_corregidas}
+\begin{bmatrix}
+F_x \\[6pt]
+F_y \\[6pt]
+F_z
+\end{bmatrix}
+=
+\begin{bmatrix}
+%
+\mathbf{F}_{M_{Total}} \cos\epsilon
++ \dfrac{\rho V^2}{2}
+\left[
+\begin{aligned}
+    & C_{D_0} A_{\text{ala}} \cos\alpha \\
+  + & C_{D_\alpha} A_{\text{cola}} (|\gamma_{\text{der}}| + |\gamma_{\text{izq}}|) \\
+  + & C_{L_\alpha} A_{\text{ala}} \sin\alpha \\
+  + & C_{D_{\text{rud}}} A_{\text{rud}} 
+        (|\alpha_{\text{rud}_{\text{der}}} + \gamma_{\text{rud}_{\text{der}}}|
+       + |\alpha_{\text{rud}_{\text{izq}}} + \gamma_{\text{rud}_{\text{izq}}}|) \\
+  + & C_{L_0} A_{\text{ala}} \sin\alpha \\
+  + & (C_{L_\alpha}^2 K_{\text{ala}}) \alpha^2 A_{\text{ala}} \cos\alpha \\
+  + & 2 C_{L_0} C_{L_\alpha} K_{\text{ala}} \alpha A_{\text{ala}} \cos\alpha \\
+  + & 2 C_{D_\alpha} A_{\text{aileron}} |\beta_{\text{aileron}}| \cos\alpha
+\end{aligned}
+\right]
+\\[80pt]
+%
+\dfrac{\rho V^2}{2}
+\left[
+\begin{aligned}
+    & C_{L_{\text{rud}}} A_{\text{rud}}
+      \sin(2\theta_{\text{cant}_{\text{rud}}})
+      \left(
+        (\alpha_{\text{rud}_{\text{izq}}} + \gamma_{\text{rud}_{\text{izq}}})
+        -
+        (\alpha_{\text{rud}_{\text{der}}} + \gamma_{\text{rud}_{\text{der}}})
+      \right) \\
+  + & C_{L_\gamma} A_{\text{cola}}
+      \sin(2\theta_{\text{cant}_{\text{cola}}})
+      (\gamma_{\text{izq}} - \gamma_{\text{der}})
+\end{aligned}
+\right]
+\\[40pt]
+%
+\mathbf{F}_{M_{Total}} \sin\epsilon
++ \dfrac{\rho V^2}{2}
+\left[
+\begin{aligned}
+    & C_{L_0} A_{\text{ala}} \cos\alpha \\
+  + & C_{L_\alpha} \alpha A_{\text{ala}} \cos\alpha \\
+  - & C_{D_0} A_{\text{ala}} \sin\alpha \\
+  - & C_{L_0}^2 K_{\text{ala}} A_{\text{ala}} \sin\alpha \\
+  - & C_{L_\alpha}^2 K_{\text{ala}} \alpha^2 A_{\text{ala}} \sin\alpha \\
+  - & 2 C_{L_0} C_{L_\alpha} K_{\text{ala}} \alpha A_{\text{ala}} \sin\alpha \\
+  + & 2 C_{L_{\text{rud}}} A_{\text{rud}}
+        \cos(2\theta_{\text{cant}_{\text{rud}}})
+         \left[
+            (\alpha_{\text{rud}_{\text{der}}} + \gamma_{\text{rud}_{\text{der}}})
+          + (\alpha_{\text{rud}_{\text{izq}}} + \gamma_{\text{rud}_{\text{izq}}})
+         \right] \\
+  + & C_{L_\gamma} A_{\text{cola}}
+        \cos(2\theta_{\text{cant}_{\text{cola}}})
+        (\gamma_{\text{izq}} + \gamma_{\text{der}}) \\
+  - & 2 C_{D_\alpha} A_{\text{aileron}} |\beta_{\text{aileron}}| \sin\alpha
+\end{aligned}
+\right]
+\end{bmatrix}
+\end{equation*}
+
+\end{document}

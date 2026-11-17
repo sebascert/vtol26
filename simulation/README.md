@@ -34,7 +34,7 @@ autonomous quaternion controller that applies ideal forces and moments. It
 does not yet provide a PX4 HIL bridge, simulated sensor interface or a calibrated
 nine-actuator plant driven by PSO outputs.
 
-The [Pixhawk firmware prototype](../controller/README.md) now includes MAVLink
+The [Pixhawk firmware prototype](../controller/VTOL.md) now includes MAVLink
 HIL output support and diagnostic PSO reception. The Harmonic bridge and
 actuator-driven plant are still separate implementation work.
 

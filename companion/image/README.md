@@ -134,9 +134,9 @@ python3 companion/image/configure.py /path/to/poky /path/to/meta-raspberrypi \
 No shared default password is configured. Losing the corresponding private key
 requires restoring it or changing the image/SD card's authorized key.
 
-**Re-run configure.py after project source changes.** It refreshes the source
-snapshot and generated build configuration while preserving an existing
-dedicated key. It deliberately replaces generated `local.conf`/`bblayers.conf`;
+**The build script refreshes source before every build.** It refreshes the source
+snapshot and generated build configuration while preserving the configured
+authorized public key. It deliberately replaces generated `local.conf`/`bblayers.conf`;
 make persistent project configuration changes in the `.in` templates instead.
 It never fetches or modifies the source Git repositories.
 
@@ -149,15 +149,19 @@ The Yocto package is named `vtol-allocator`; its executable and service are
 
 ## 3. Build and flash
 
-The configure command prints the exact build-environment command. For the archive
-layout above, run in Bash:
+Run the build script from the repository root after preparing the host and
+layers above:
 
 ```sh
-source "$SOURCES/poky-scarthgap/oe-init-build-env" \
-  "$VTOL_ROOT/companion/image/build/yocto"
-bitbake-layers show-layers
-bitbake vtol-companion-image
+./companion/image/build.sh
 ```
+
+The script refreshes the allocator snapshot and provisioning configuration,
+preserves an existing SSH identity, loads the Yocto environment and runs BitBake.
+It uses the layers under `companion/image/build/sources/` by default. Set
+`POKY_DIR` and `BSP_DIR` to use other existing Scarthgap directories. Additional
+arguments are forwarded to BitBake; `./companion/image/build.sh -n` performs a dry run.
+On hosts requiring the AppArmor allowance above, run the script inside that build shell.
 
 The build downloads toolchain, kernel and OS dependencies and can take hours.
 Two BitBake workers and two make jobs are configured to limit laptop resource

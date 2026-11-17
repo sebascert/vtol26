@@ -8,7 +8,7 @@ grouped under `gen/`; original PDFs and resource links are organized separately.
 
 - Active source layout: [Pi image](../companion/image/README.md),
   [self-contained allocator](../companion/allocator/README.md),
-  [PX4 controller integration](../controller/README.md) and
+  [PX4 controller integration](../controller/VTOL.md) and
   [Gazebo simulation](../simulation/README.md). Standalone PSO, Simulink and CAD
   references are archived under `legacy/`.
 - [Project progress — study and presentation guide](gen/guides/project_progress_study_guide.md)
@@ -16,7 +16,7 @@ grouped under `gen/`; original PDFs and resource links are organized separately.
   milestones and a ten-minute presentation plan.
 - [System overview](gen/architecture/system_overview.md) — intended hardware/software
   architecture and implementation status.
-- [Pixhawk 6C firmware and PSO reception](../controller/README.md) — pinned PX4,
+- [Pixhawk 6C firmware and PSO reception](../controller/VTOL.md) — pinned PX4,
   build instructions, diagnostic packet contract, bench proof and Harmonic HIL boundary.
 - [Raspberry Pi ↔ Pixhawk 6C wiring](gen/guides/raspberry_pi_pixhawk_6c_wiring.md) —
   physical pinout, separate power, UART/PX4 setup and bench checks.
@@ -27,6 +27,8 @@ grouped under `gen/`; original PDFs and resource links are organized separately.
 - [PX4 upstream comparison and backup audit](gen/guides/backup_pso_px4_audit.md#direct-comparison-with-official-px4-upstream)
   — exact-commit file comparison, legacy board additions and historical PSO findings.
 - [Vehicle modeling](gen/modeling/readme.md) — dynamics model and Simulink helpers.
+- [Dynamics and actuator model assessment](gen/modeling/model_consistency_audit.md)
+  — source-cited comparison, inconsistencies and the most complete reusable model.
 - [Reference notes](gen/references/readme.md) — context for the external PDFs.
 - [Historical notes](gen/archive/pre_companion_redesign/readme.md) — earlier STM32
   guides, source README and architecture review. These describe an older design;

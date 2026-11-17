@@ -1,9 +1,12 @@
 """Host checks for provisioning and image contracts; no Git, root or networking."""
 import importlib.util
 import ipaddress
+import json
+import os
 import shutil
 import stat
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -110,6 +113,38 @@ class ImageTest(unittest.TestCase):
         self.assertIn('SYSTEMD_SERVICE:${PN} = "vtol_allocator@vtol.service"', recipe)
         image = (ROOT / "meta-vtol/recipes-core/images/vtol-companion-image.bb").read_text()
         self.assertIn(" vtol-allocator ", image)
+
+    def test_build_script_refreshes_source_and_invokes_bitbake(self):
+        bin_dir = self.work / "bin"
+        bin_dir.mkdir()
+        log = self.work / "bitbake.json"
+        bitbake = bin_dir / "bitbake"
+        bitbake.write_text(f"#!{sys.executable}\n"
+                          "import json, os, sys\n"
+                          f"open({str(log)!r}, 'w').write(json.dumps([os.getcwd(), sys.argv[1:]]))\n")
+        bitbake.chmod(0o755)
+        (self.poky / "oe-init-build-env").write_text('mkdir -p "$1"\ncd "$1"\n: "$YOCTO_TEST_OPTIONAL"\n')
+        env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}",
+                   POKY_DIR=str(self.poky), BSP_DIR=str(self.bsp))
+        subprocess.run(["bash", str(self.image / "build.sh"), "-n"],
+                       cwd=self.work, env=env, check=True, capture_output=True)
+        self.assertEqual(json.loads(log.read_text()),
+                         [str(self.image / "build/yocto"), ["vtol-companion-image", "-n"]])
+        self.assertTrue((self.image / "build/provision/vtol-source.tar.gz").is_file())
+        custom_key = self.work / "custom-key"
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(custom_key)], check=True)
+        custom_public_key = Path(str(custom_key) + ".pub")
+        self.module.prepare(self.poky, self.bsp, custom_public_key)
+        subprocess.run(["bash", str(self.image / "build.sh"), "-n"],
+                       cwd=self.work, env=env, check=True, capture_output=True)
+        self.assertEqual((self.image / "build/provision/authorized_keys").read_bytes(),
+                         custom_public_key.read_bytes())
+        env["POKY_DIR"] = str(self.work / "missing")
+        log.unlink()
+        result = subprocess.run(["bash", str(self.image / "build.sh")],
+                                cwd=self.work, env=env, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(log.exists())
 
 
 if __name__ == "__main__":

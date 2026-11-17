@@ -2,6 +2,13 @@
 
 Este espacio documenta el modelo dinamico del vehiculo y su implementacion simbolica.
 
+## Evaluacion de consistencia
+
+- [Drone dynamics and actuator model assessment](model_consistency_audit.md)
+  — revision de documentos, ecuaciones y fuentes: no hay un modelo unificado
+  calibrado; el PSO actual cubre los nueve actuadores y la planta Simulink aporta
+  la dinamica continua, pero sus entradas y parametros no son equivalentes.
+
 ## Estado actual
 
 - Implementacion base en `legacy/simulation/simulink/fuerzas_v4.m`.

@@ -5,7 +5,7 @@ bridge, firmware changes, parameter changes, or simulation runs were performed
 for this document. References to PX4 `main` describe inspected upstream source,
 not the firmware currently installed on the Pixhawk.
 
-Update, 2026-11-13: the [controller firmware prototype](../../../controller/README.md)
+Update, 2026-11-13: the [controller firmware prototype](../../../controller/VTOL.md)
 now builds against pinned PX4 v1.17.0, publishes validated Pi candidates to
 `pso_allocation`, and includes `pwm_out_sim` on FMUv6C. Hardware receipt,
 allocation application and the Harmonic HIL bridge remain unverified or pending.

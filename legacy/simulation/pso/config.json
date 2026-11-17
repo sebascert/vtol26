@@ -1,0 +1,98 @@
+{
+  "physics": {
+    "rho": 1.225,
+    "g": 9.81,
+    "mass": 4.0,
+    "inertia": [0.12, 0.15, 0.22]
+  },
+  "wing": {
+    "area": 0.28,
+    "cl0": 0.28,
+    "cl_alpha": 4.6,
+    "cd0": 0.028,
+    "k": 0.06
+  },
+  "tail": {
+    "area": 0.05,
+    "cl_gamma": 0.52,
+    "cd_gamma": 0.016,
+    "cant_angle": 0.785
+  },
+  "ruddervator": {
+    "area": 0.02,
+    "cl": 0.28,
+    "cd": 0.012,
+    "cant_angle": 0.785
+  },
+  "aileron": {
+    "area": 0.03,
+    "cl_beta": 0.32,
+    "cd_beta": 0.015
+  },
+  "propulsion": {
+    "thrust_coefficient": 0.00024,
+    "reference_airspeed": 20.0
+  },
+  "cost_function": {
+    "omega_scale": 200.0,
+    "angle_scale": 0.20,
+    "k_w": 80.0,
+    "k_epsilon": 25.0,
+    "k_gamma": 25.0,
+    "k_beta": 25.0,
+    "k_dynamics": 0.05,
+    "k_pos": 10.0,
+    "k_att": 50.0,
+    "dt": 0.1
+  },
+  "target_pose": {
+    "position": [0.0, 0.0, 10.0],
+    "orientation": [0.0, 0.1, 0.0]
+  },
+  "pso": {
+    "w_max": 0.95,
+    "w_min": 0.62,
+    "c1": 2.2,
+    "c2": 1.3,
+    "num_particles": 100,
+    "max_iterations": 15,
+    "k_am": 50.0,
+    "external_cycles": 15,
+    "k_am_contraction": 0.72,
+    "k_am_min": 2.0,
+    "convergence_threshold": 0.5
+  },
+  "visualization": {
+    "json_path": "pso_data.json",
+    "interval_ms": 100,
+    "dims": [0, 1, 2],
+    "axis_limits": [
+      [-10, 2000],
+      [-10, 2000],
+      [-10, 2000]
+    ],
+    "dynamic_zoom": true,
+    "zoom_smooth": 0.12,
+    "zoom_padding": 0.12,
+    "min_span": 1.0,
+    "display_iteration_one_based": true,
+    "colors": {
+      "particles": "lime",
+      "gbest": "gold",
+      "target": "white",
+      "center": "magenta",
+      "target_pose": "cyan",
+      "predicted_gbest_pose": "red"
+    },
+    "sizes": {
+      "particles": 34,
+      "gbest": 220,
+      "target": 300,
+      "center": 90,
+      "target_pose": 350,
+      "predicted_gbest_pose": 280
+    },
+    "initial_state": [1000.0, 1050.0, 950.0, 0.5, 0.5, 0.0, 0.0, 0.1, -0.1],
+    "labels": ["ω_I", "ω_D", "ω_T", "ε_I", "ε_D", "γ_I", "γ_D", "β_I", "β_D"]
+  }
+}

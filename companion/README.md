@@ -7,5 +7,5 @@
 
 The allocator needs fresh PX4 telemetry and returns bounded model candidates
 as JSON and MAVLink diagnostics. It currently has no physical actuator output
-mapping. The planned PX4-side integration belongs in [`controller/`](../controller/README.md),
+mapping. The planned PX4-side integration belongs in [`controller/`](../controller/VTOL.md),
 and Gazebo code belongs in [`simulation/`](../simulation/README.md).

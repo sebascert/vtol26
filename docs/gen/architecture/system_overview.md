@@ -4,7 +4,7 @@
 
 The Pixhawk 6C runs PX4 and remains responsible for flight-controller functions.
 The Raspberry Pi runs the vehicle-specific PSO application and communicates
-with PX4 over MAVLink. The [firmware prototype](../../../controller/README.md)
+with PX4 over MAVLink. The [firmware prototype](../../../controller/VTOL.md)
 in `controller/` receives validated PSO diagnostic candidates and publishes
 `pso_allocation`. Applying candidates to actuator outputs remains unimplemented.
 
@@ -12,7 +12,7 @@ in `controller/` receives validated PSO diagnostic candidates and publishes
 
 - `companion/allocator/`: self-contained C++ solver, MAVLink, tests and deployment.
 - `companion/image/`: Raspberry Pi image and Ethernet/SSH configuration.
-- `controller/`: pinned PX4/Pixhawk 6C receiver patch, HIL output support and build guide.
+- `controller/`: PX4 fork checkout for Pixhawk 6C, diagnostic reception, HIL output support and build guide.
 - `simulation/`: Gazebo world, vehicle model, meshes and reference controller.
 - `legacy/`: standalone PSO, Simulink, CAD, STM32 and historical PX4 copies.
 
