@@ -129,12 +129,21 @@ The limits in the supplied config are illustrative bounds for the experiment,
 not measured aircraft calibration. In particular, the inherited force model
 uses **linear** `thrust_coefficient * omega`; its rotor values must not be
 interpreted as calibrated RPM, rad/s, PWM or normalized motor thrust. The model
-also uses fixed geometry and zero angle of attack. Its historical wing-drag
-axis convention and overlapping tail/ruddervator contributions need model
-validation. The companion negates NED Z/VZ for the experiment's positive-up
-world convention; the complete world/body attitude convention still needs
-validation against the aircraft. Measured airspeed replaces the simulation's
+also uses fixed geometry and zero angle of attack. Overlapping tail/ruddervator
+contributions need model validation. Measured airspeed replaces the simulation's
 fixed reference airspeed, including zero airspeed during hover.
+
+State and pose targets use local NED coordinates (north, east, down). Attitude
+is body-FRD-to-NED roll/pitch/yaw in radians; angular rates are about FRD body
+axes. PX4 telemetry passes through without axis negations. The predictor uses
+upward thrust/lift along negative body Z, aft drag along negative body X,
+mirrored V-tail forces, and gravity along positive NED Z, following
+[the model's frame conventions](../../docs/model/vtol_model.tex).
+The default target `[0, 0, -10]` means 10 metres above the local origin.
+Custom targets previously written with positive-up Z must be migrated to NED;
+check their attitude reference as well. Motor units and packet ordering are
+unchanged. This frame correction does not implement the model's configurable
+geometry, variable incidence or rotor reaction moments.
 
 This implements the repository's pose-target experiment, not a force/torque
 allocator receiving wrench demands from PX4. Its fitness is the existing

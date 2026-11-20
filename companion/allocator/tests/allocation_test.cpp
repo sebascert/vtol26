@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     }
     auto again = optimizer.solve(vehicle, result.actuators, {16,5,1});
     CHECK(again.fitness <= result.fitness);
-    vehicle.position[2] = 10;
+    vehicle.position[2] = -10;
     CHECK(optimizer.solve(vehicle, initial, {16,5,1}).position_converged);
     vehicle.position[0] = std::numeric_limits<double>::quiet_NaN();
     bool rejected = false;

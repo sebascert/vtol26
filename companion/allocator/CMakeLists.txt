@@ -24,6 +24,9 @@ target_link_libraries(vtol_allocator PRIVATE companion_core)
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(frames_test tests/frames_test.cpp)
+    target_link_libraries(frames_test PRIVATE companion_core)
+    add_test(NAME frames COMMAND frames_test ${CMAKE_CURRENT_BINARY_DIR}/frames_config.json)
     add_executable(allocation_test tests/allocation_test.cpp)
     target_link_libraries(allocation_test PRIVATE companion_core util)
     add_test(NAME installer COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/tests/install_test.sh

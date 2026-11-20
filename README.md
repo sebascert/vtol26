@@ -37,7 +37,7 @@ cmake --build controller/build/host-tests --parallel 2 &&
 ctest --test-dir controller/build/host-tests --output-on-failure
 ```
 
-Expect four passing tests.
+Expect five passing tests.
 
 ## Test live allocator/PX4 communication
 

@@ -7,10 +7,9 @@ void PSOInterface::reset() { center_ = optimizer_.initialActuatorState(); }
 
 pso_runtime::Result PSOInterface::runPSO(const DroneState& state) {
     pso_runtime::VehicleState vehicle;
-    // shortcut: preserve the experiment's positive-up model axes; validate the full
-    // body/world frame convention before using these allocations for actuation.
-    vehicle.position = {state.local_x, state.local_y, -state.local_z};
-    vehicle.velocity = {state.velocity_x, state.velocity_y, -state.velocity_z};
+    // PX4 and the predictor share NED world coordinates and FRD body axes.
+    vehicle.position = {state.local_x, state.local_y, state.local_z};
+    vehicle.velocity = {state.velocity_x, state.velocity_y, state.velocity_z};
     vehicle.orientation = {state.roll, state.pitch, state.yaw};
     vehicle.angular_rate = {state.gyro_x, state.gyro_y, state.gyro_z};
     vehicle.airspeed_m_s = state.airspeed;

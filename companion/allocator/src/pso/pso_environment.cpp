@@ -347,6 +347,7 @@ public:
 
     FuerzaMomento calcularFuerzaMomento(const std::array<double, DIMENSION_ESTADO>& particula) const {
         FuerzaMomento resultado;
+        // Body FRD: thrust/lift point up (-Z), drag points aft (-X).
         const double alpha = 0.0;
         const double V = parametrosFisicos.velocidad_aire_referencia;
         const double q = 0.5 * parametrosFisicos.rho * V * V;
@@ -365,28 +366,28 @@ public:
         const double CD = parametrosFisicos.cd0_ala + parametrosFisicos.k_ala * CL * CL;
         const double D_ala = -CD * q * parametrosFisicos.area_ala;
         const double L_ala = CL * q * parametrosFisicos.area_ala;
-        const auto F_ala = rotarVectorPorCuaternion({0.0, D_ala, L_ala}, cuaternionDesdeAnguloEjeY(-alpha));
+        const auto F_ala = rotarVectorPorCuaternion({D_ala, 0.0, -L_ala}, cuaternionDesdeAnguloEjeY(-alpha));
 
         const double L_aleron_izq = -q * parametrosFisicos.cl_beta_aleron * beta_I * parametrosFisicos.area_aleron;
         const double D_aleron_izq = -q * parametrosFisicos.cd_beta_aleron * std::abs(beta_I) * parametrosFisicos.area_aleron;
         const double L_aleron_der = q * parametrosFisicos.cl_beta_aleron * beta_D * parametrosFisicos.area_aleron;
         const double D_aleron_der = -q * parametrosFisicos.cd_beta_aleron * std::abs(beta_D) * parametrosFisicos.area_aleron;
-        const auto F_aleron_izq = rotarVectorPorCuaternion({0.0, D_aleron_izq, L_aleron_izq}, cuaternionDesdeAnguloEjeY(-alpha));
-        const auto F_aleron_der = rotarVectorPorCuaternion({0.0, D_aleron_der, L_aleron_der}, cuaternionDesdeAnguloEjeY(-alpha));
+        const auto F_aleron_izq = rotarVectorPorCuaternion({D_aleron_izq, 0.0, -L_aleron_izq}, cuaternionDesdeAnguloEjeY(-alpha));
+        const auto F_aleron_der = rotarVectorPorCuaternion({D_aleron_der, 0.0, -L_aleron_der}, cuaternionDesdeAnguloEjeY(-alpha));
 
         const double empuje_I = parametrosFisicos.coeficiente_empuje * omega_I;
         const double empuje_D = parametrosFisicos.coeficiente_empuje * omega_D;
         const double empuje_T = parametrosFisicos.coeficiente_empuje * omega_T;
-        const auto F_motor_izq = rotarVectorPorCuaternion({0.0, 0.0, empuje_I}, cuaternionDesdeAnguloEjeY(epsilon_I));
-        const auto F_motor_der = rotarVectorPorCuaternion({0.0, 0.0, empuje_D}, cuaternionDesdeAnguloEjeY(epsilon_D));
-        const auto F_motor_trasero = std::array<double, 3>{0.0, 0.0, empuje_T};
+        const auto F_motor_izq = rotarVectorPorCuaternion({0.0, 0.0, -empuje_I}, cuaternionDesdeAnguloEjeY(-epsilon_I));
+        const auto F_motor_der = rotarVectorPorCuaternion({0.0, 0.0, -empuje_D}, cuaternionDesdeAnguloEjeY(-epsilon_D));
+        const auto F_motor_trasero = std::array<double, 3>{0.0, 0.0, -empuje_T};
 
         const double D_cola_izq = -q * parametrosFisicos.cd_gamma_cola * std::abs(gamma_I) * parametrosFisicos.area_cola;
         const double L_cola_izq = q * parametrosFisicos.cl_gamma_cola * gamma_I * parametrosFisicos.area_cola;
         const double D_cola_der = -q * parametrosFisicos.cd_gamma_cola * std::abs(gamma_D) * parametrosFisicos.area_cola;
         const double L_cola_der = q * parametrosFisicos.cl_gamma_cola * gamma_D * parametrosFisicos.area_cola;
-        const auto F_cola_izq = rotarVectorPorCuaternion({0.0, D_cola_izq, L_cola_izq}, cuaternionDesdeAnguloEjeX(-parametrosFisicos.angulo_diedro_cola));
-        const auto F_cola_der = rotarVectorPorCuaternion({0.0, D_cola_der, L_cola_der}, cuaternionDesdeAnguloEjeX(parametrosFisicos.angulo_diedro_cola));
+        const auto F_cola_izq = rotarVectorPorCuaternion({D_cola_izq, 0.0, -L_cola_izq}, cuaternionDesdeAnguloEjeX(parametrosFisicos.angulo_diedro_cola));
+        const auto F_cola_der = rotarVectorPorCuaternion({D_cola_der, 0.0, -L_cola_der}, cuaternionDesdeAnguloEjeX(-parametrosFisicos.angulo_diedro_cola));
 
         const double efectivo_ruddervator_izq = gamma_I;
         const double efectivo_ruddervator_der = gamma_D;
@@ -394,8 +395,8 @@ public:
         const double L_ruddervator_izq = q * parametrosFisicos.cl_ruddervator * efectivo_ruddervator_izq * parametrosFisicos.area_ruddervator;
         const double D_ruddervator_der = -q * parametrosFisicos.cd_ruddervator * std::abs(efectivo_ruddervator_der) * parametrosFisicos.area_ruddervator;
         const double L_ruddervator_der = q * parametrosFisicos.cl_ruddervator * efectivo_ruddervator_der * parametrosFisicos.area_ruddervator;
-        const auto F_ruddervator_izq = rotarVectorPorCuaternion({0.0, D_ruddervator_izq, L_ruddervator_izq}, cuaternionDesdeAnguloEjeX(-parametrosFisicos.angulo_diedro_ruddervator));
-        const auto F_ruddervator_der = rotarVectorPorCuaternion({0.0, D_ruddervator_der, L_ruddervator_der}, cuaternionDesdeAnguloEjeX(parametrosFisicos.angulo_diedro_ruddervator));
+        const auto F_ruddervator_izq = rotarVectorPorCuaternion({D_ruddervator_izq, 0.0, -L_ruddervator_izq}, cuaternionDesdeAnguloEjeX(parametrosFisicos.angulo_diedro_ruddervator));
+        const auto F_ruddervator_der = rotarVectorPorCuaternion({D_ruddervator_der, 0.0, -L_ruddervator_der}, cuaternionDesdeAnguloEjeX(-parametrosFisicos.angulo_diedro_ruddervator));
 
         resultado.fuerza = F_ala;
         resultado.fuerza = sumar3(resultado.fuerza, F_aleron_izq);
@@ -437,7 +438,7 @@ public:
         FuerzaMomento fm = calcularFuerzaMomento(particula);
         auto cuerpoAInercial = cuaternionDesdeEuler(orientacionActual[0], orientacionActual[1], orientacionActual[2]);
         auto F_inercial = rotarVectorPorCuaternion(fm.fuerza, cuerpoAInercial);
-        const std::array<double, 3> gravedad = {0.0, 0.0, -parametrosFisicos.g};
+        const std::array<double, 3> gravedad = {0.0, 0.0, parametrosFisicos.g};
         auto aceleracion = sumar3(escalar3(F_inercial, 1.0 / parametrosFisicos.masa), gravedad);
 
         const double dt = parametrosFisicos.dt;

@@ -10,12 +10,10 @@
 namespace pso_runtime {
 
 struct VehicleState {
-    // Model frame uses a positive-up Z axis. The companion currently converts
-    // LOCAL_POSITION_NED Z and VZ to this convention before calling the solver.
-    std::array<double, 3> position{};
-    std::array<double, 3> orientation{};  // roll, pitch, yaw [rad]
-    std::array<double, 3> velocity{};     // model frame [m/s]
-    std::array<double, 3> angular_rate{}; // roll, pitch, yaw rates [rad/s]
+    std::array<double, 3> position{};    // Local NED [m], positive Z down.
+    std::array<double, 3> orientation{}; // FRD-body-to-NED roll, pitch, yaw [rad].
+    std::array<double, 3> velocity{};    // Local NED [m/s].
+    std::array<double, 3> angular_rate{}; // FRD body angular velocity [rad/s].
     double airspeed_m_s = 0.0;
 };
 

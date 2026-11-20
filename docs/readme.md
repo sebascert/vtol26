@@ -27,6 +27,9 @@ grouped under `gen/`; original PDFs and resource links are organized separately.
 - [PX4 upstream comparison and backup audit](gen/guides/backup_pso_px4_audit.md#direct-comparison-with-official-px4-upstream)
   — exact-commit file comparison, legacy board additions and historical PSO findings.
 - [Vehicle modeling](gen/modeling/readme.md) — dynamics model and Simulink helpers.
+- [Nine-actuator simulation model](model/vtol_model.tex) — LaTeX specification
+  using PX4 frames, source-defined tail coupling and symbolic
+  configuration/calibration parameters. Build with `./docs/model/build.sh`.
 - [Dynamics and actuator model assessment](gen/modeling/model_consistency_audit.md)
   — source-cited comparison, inconsistencies and the most complete reusable model.
 - [Reference notes](gen/references/readme.md) — context for the external PDFs.
