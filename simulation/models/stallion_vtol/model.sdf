@@ -1,0 +1,621 @@
+<?xml version='1.0' encoding='utf-8'?>
+<sdf version="1.9">
+  <model name="stallion_vtol" canonical_link="base_link">
+    <!-- CAD: span/up/aft in mm; body: forward/left/up in m. -->
+    <!-- shortcut: Assembly poses reconstructed from mesh seams; replace with CAD assembly transforms when available. -->
+    <frame name="cad" attached_to="base_link">
+      <pose>0.3 0 -0.05 1.5707963267948966 0 -1.5707963267948966</pose>
+    </frame>
+    <link name="base_link">
+      <inertial />
+      <!-- Populated from vehicle.json before launch. -->
+      <collision name="body_collision">
+        <geometry>
+          <sphere>
+            <radius>0.25</radius>
+          </sphere>
+        </geometry>
+      </collision>
+      <visual name="nose">
+        <pose relative_to="cad">-0.059961000 0.019540000 0.004646700 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/nose_clean.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fuselage_left">
+        <pose relative_to="cad">-0.082638000 0.008739800 0.000000000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_1_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fuselage_right">
+        <pose relative_to="cad">-0.082638000 0.008739800 0.000000000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_1_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="boom_left">
+        <pose relative_to="cad">-0.339505000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/boom_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.10 0.11 0.12 1</ambient>
+          <diffuse>0.23 0.26 0.29 1</diffuse>
+        </material>
+      </visual>
+      <visual name="boom_right">
+        <pose relative_to="cad">-0.339505000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/boom_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.10 0.11 0.12 1</ambient>
+          <diffuse>0.23 0.26 0.29 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wing_1_left">
+        <pose relative_to="cad">-0.318837000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/wing_1l_vtol.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.08 0.16 0.25 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wing_1_right">
+        <pose relative_to="cad">0.008800000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/wing_1r_vtol.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.08 0.16 0.25 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wing_2_left">
+        <pose relative_to="cad">-0.628874000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/wing_2l_vtol.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.08 0.16 0.25 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wing_2_right">
+        <pose relative_to="cad">0.008800000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/wing_2r_vtol.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.08 0.16 0.25 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wing_3_left">
+        <pose relative_to="cad">-0.898838000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/wing_3l_vtol.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.08 0.16 0.25 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wing_3_right">
+        <pose relative_to="cad">0.008800000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/vtol/wing_3r_vtol.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.08 0.16 0.25 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_2_l">
+        <pose relative_to="cad">-0.150461000 0.000000000 0.012335800 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_2_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_2_r">
+        <pose relative_to="cad">-0.150461000 0.000000000 0.012335800 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_2_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_3_l">
+        <pose relative_to="cad">-0.150270000 0.000000000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_3_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_3_r">
+        <pose relative_to="cad">-0.150270000 0.000000000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_3_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_4_l">
+        <pose relative_to="cad">-0.150030000 0.003476400 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_4_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_4_r">
+        <pose relative_to="cad">-0.150030000 0.003476400 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_4_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_5_l">
+        <pose relative_to="cad">-0.150018000 0.018077500 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_5_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_5_r">
+        <pose relative_to="cad">-0.150018000 0.018077500 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_5_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_root_l">
+        <pose relative_to="cad">-0.160000000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_root_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="fus_root_r">
+        <pose relative_to="cad">0.000000000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/fuselage/fus_root_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.15 0.17 0.20 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="tail_1">
+        <pose relative_to="cad">-0.029158000 0.056200000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/tail_1.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="tail_2">
+        <pose relative_to="cad">-0.028970000 0.040000000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/tail_2.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="tail_3">
+        <pose relative_to="cad">-0.015191000 0.056200000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/tail_3.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="v_tail_1_l">
+        <pose relative_to="cad">-0.232700000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/v_tail_1_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="v_tail_1_r">
+        <pose relative_to="cad">0.006397000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/v_tail_1_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="v_tail_2_l">
+        <pose relative_to="cad">-0.232700000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/v_tail_2_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="v_tail_2_r">
+        <pose relative_to="cad">0.006397000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/v_tail_2_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="v_tail_tip_l">
+        <pose relative_to="cad">-0.232700000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/v_tail_tip_l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="v_tail_tip_r">
+        <pose relative_to="cad">0.006397000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/v_tail_tip_r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="rudder_1l">
+        <pose relative_to="cad">-0.138690000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/rudder_1l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="rudder_1r">
+        <pose relative_to="cad">0.006397000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/rudder_1r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="rudder_2l">
+        <pose relative_to="cad">-0.232700000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/rudder_2l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="rudder_2r">
+        <pose relative_to="cad">0.006397000 0.083500000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/tail/rudder_2r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="aileron_1l">
+        <pose relative_to="cad">-0.443591000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/wing/aileron_1l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="aileron_1r">
+        <pose relative_to="cad">0.008800000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/wing/aileron_1r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="aileron_2l">
+        <pose relative_to="cad">-0.569207000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/wing/aileron_2l.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="aileron_2r">
+        <pose relative_to="cad">0.008800000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/wing/aileron_2r.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.38 0.43 0.50 1</ambient>
+          <diffuse>0.38 0.43 0.50 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wingtip_l_no_led">
+        <pose relative_to="cad">-0.681290000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/wing/wingtip_l_no_led.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="wingtip_r_no_led">
+        <pose relative_to="cad">0.588800000 0.082480000 0.073422000 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://stallion_vtol/meshes/wing/wingtip_r_no_led.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.20 0.42 0.65 1</ambient>
+          <diffuse>0.20 0.42 0.65 1</diffuse>
+        </material>
+      </visual>
+      <visual name="tail_boom">
+        <pose relative_to="cad">0 0.0712 0.7675 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.008</radius>
+            <length>0.435</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+        </material>
+      </visual>
+      <!-- IMU/barometer/GPS follow PX4 v1.17 x500_base. PX4 sensor_mag_sim supplies magnetics. -->
+      <sensor name="air_pressure_sensor" type="air_pressure">
+        <always_on>1</always_on>
+        <update_rate>50</update_rate>
+        <air_pressure>
+          <pressure>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>3</stddev>
+            </noise>
+          </pressure>
+        </air_pressure>
+      </sensor>
+      <sensor name="imu_sensor" type="imu">
+        <always_on>1</always_on>
+        <update_rate>250</update_rate>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.0008726646</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.0008726646</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.0008726646</stddev>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00637</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00637</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.00686</stddev>
+              </noise>
+            </z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+      <sensor name="navsat_sensor" type="navsat">
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+      </sensor>
+    </link>
+    <plugin filename="libvtol_plant.so" name="vtol::Plant">
+      <link_name>base_link</link_name>
+      <command_timeout_s>0.5</command_timeout_s>
+    </plugin>
+  </model>
+</sdf>

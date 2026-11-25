@@ -1,0 +1,170 @@
+\documentclass{article}
+\usepackage{amsmath}
+\begin{document}
+
+\[
+  Fuerzas\,Alas^B = \begin{bmatrix}
+                      \cos\!\left( \tfrac{\alpha}{2} \right)  \\[6pt]
+                      0                                       \\[6pt]
+                      -\sin\!\left( \tfrac{\alpha}{2} \right) \\[6pt]
+                      0
+                    \end{bmatrix}
+  \otimes \begin{bmatrix}
+            0                             \\[6pt]
+            - (0.16 \cdot C_D(\alpha)V^2) \\[6pt]
+            0                             \\[6pt]
+            0.16 \cdot C_L(\alpha)V^2
+          \end{bmatrix}
+  \otimes \begin{bmatrix}
+            \cos\!\left( \tfrac{\alpha}{2} \right) \\[6pt]
+            0                                      \\[6pt]
+            \sin\!\left( \tfrac{\alpha}{2} \right) \\[6pt]
+            0
+          \end{bmatrix}
+\]
+
+\[
+  Fuerzas\,Motor_n^B = \begin{bmatrix}
+                         \cos\!\left( \tfrac{\epsilon_n}{2} \right) \\[6pt]
+                         0                                          \\[6pt]
+                         \sin\!\left( \tfrac{\epsilon_n}{2} \right) \\[6pt]
+                         0
+                       \end{bmatrix}
+  \otimes \begin{bmatrix}
+            0         \\[6pt]
+            0         \\[6pt]
+            0         \\[6pt]
+            F_{M_{n}}
+          \end{bmatrix}
+  \otimes \begin{bmatrix}
+            \cos(\tfrac{\epsilon_n}{2})  \\[6pt]
+            0                            \\[6pt]
+            -\sin(\tfrac{\epsilon_n}{2}) \\[6pt]
+            0
+          \end{bmatrix}
+\]
+
+\[
+  Fuerzas\,Aleron_n^B = \begin{bmatrix}
+                          \cos\!\left( \tfrac{\alpha}{2} \right)  \\[6pt]
+                          0                                       \\[6pt]
+                          -\sin\!\left( \tfrac{\alpha}{2} \right) \\[6pt]
+                          0
+                        \end{bmatrix}
+  \otimes \begin{bmatrix}
+            0                                 \\[6pt]
+            0.00093 \left| \beta_n \right|V^2 \\[6pt]
+            0                                 \\[6pt]
+            0.0036\beta_nV^2
+          \end{bmatrix}
+  \otimes \begin{bmatrix}
+            \cos\!\left( \tfrac{\alpha}{2} \right) \\[6pt]
+            0                                      \\[6pt]
+            \sin\!\left( \tfrac{\alpha}{2} \right) \\[6pt]
+            0
+          \end{bmatrix}
+\]
+
+\[
+  Fuerzas\,Cola_1^B = \begin{bmatrix}
+                        \cos(0.48) \\[6pt]
+                        \sin(0.48) \\[6pt]
+                        0          \\[6pt]
+                        0
+                      \end{bmatrix}
+  \otimes \begin{bmatrix}
+            0                                                                           \\[6pt]
+            -(602 \cdot C_{D_{\gamma_{1}}}(\alpha)\left| \gamma_1 \right|V^2 \cdot S_a) \\[6pt]
+            0                                                                           \\[6pt]
+            602 \cdot C_{L_{\gamma_{1}}}(\alpha)\gamma_1 V^2 \cdot S_a
+          \end{bmatrix}
+  \otimes \begin{bmatrix}
+            \cos(0.48)  \\[6pt]
+            -\sin(0.48) \\[6pt]
+            0           \\[6pt]
+            0
+          \end{bmatrix}
+\]
+
+\[
+  Fuerzas\,Cola_2^B = \begin{bmatrix}
+                        \cos(0.48)  \\[6pt]
+                        -\sin(0.48) \\[6pt]
+                        0           \\[6pt]
+                        0
+                      \end{bmatrix}
+  \otimes \begin{bmatrix}
+            0                                                                           \\[6pt]
+            -(602 \cdot C_{D_{\gamma_{2}}}(\alpha)\left| \gamma_2 \right|V^2 \cdot S_a) \\[6pt]
+            0                                                                           \\[6pt]
+            602 \cdot C_{L_{\gamma_{2}}}(\alpha)\gamma_2 V^2 \cdot S_a
+          \end{bmatrix}
+  \otimes \begin{bmatrix}
+            \cos(0.48) \\[6pt]
+            \sin(0.48) \\[6pt]
+            0          \\[6pt]
+            0
+          \end{bmatrix}
+\]
+
+\[
+  Fuerzas\,Ruddervator_1^B = \begin{bmatrix}
+                               \cos(0.48) \\[6pt]
+                               \sin(0.48) \\[6pt]
+                               0          \\[6pt]
+                               0
+                             \end{bmatrix}
+  \otimes \begin{bmatrix}
+            0                                                                                           \\[6pt]
+            -(602 \cdot C_{D_{rud}}(\alpha)\left| \alpha_{rud,1} + \gamma_{rud,1} \right|V^2 \cdot S_a) \\[6pt]
+            0                                                                                           \\[6pt]
+            602 \cdot C_{L_{rud}}(\alpha)(\alpha_{rud,1} + \gamma_{rud,1}) V^2 \cdot S_a
+          \end{bmatrix}
+  \otimes \begin{bmatrix}
+            \cos(0.48)  \\[6pt]
+            -\sin(0.48) \\[6pt]
+            0           \\[6pt]
+            0
+          \end{bmatrix}
+\]
+
+\[
+  Fuerzas\,Ruddervator_2^B = \begin{bmatrix}
+                               \cos(0.48)  \\[6pt]
+                               -\sin(0.48) \\[6pt]
+                               0           \\[6pt]
+                               0
+                             \end{bmatrix}
+  \otimes \begin{bmatrix}
+            0                                                                                           \\[6pt]
+            -(602 \cdot C_{D_{rud}}(\alpha)\left| \alpha_{rud,2} + \gamma_{rud,2} \right|V^2 \cdot S_a) \\[6pt]
+            0                                                                                           \\[6pt]
+            602 \cdot C_{L_{rud}}(\alpha)(\alpha_{rud,2} + \gamma_{rud,2}) V^2 \cdot S_a
+          \end{bmatrix}
+  \otimes \begin{bmatrix}
+            \cos(0.48) \\[6pt]
+            \sin(0.48) \\[6pt]
+            0          \\[6pt]
+            0
+          \end{bmatrix}
+\]
+
+% Roll Moments (x-axis)
+\[
+  M_x^B = Momento\,Alerones_x^B + Momento\,Rotores_{dif,x}^B
+\]
+
+\[
+  Momento\,Alerones_x^B = 2 \cdot \left( \tfrac{1}{2} \rho V^2 S_{aileron} C_{L_\beta} \beta_{aileron} \right) \cdot y_{aileron}
+\]
+
+\[
+  Momento\,Rotores_{dif,x}^B = \left( F_{z,Motor_1}^B - F_{z,Motor_2}^B \right) \cdot y_{rotor}
+\]
+
+Where:
+\[
+  F_{z,Motor_n}^B = \text{z-component of } Fuerzas\,Motor_n^B
+\]
+
+\end{document}

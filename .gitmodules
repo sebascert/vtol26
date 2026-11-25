@@ -1,0 +1,4 @@
+[submodule "controller"]
+	path = controller
+	url = git@github.com:sebascert/vtol26-px4.git
+	branch = vtol

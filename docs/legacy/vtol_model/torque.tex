@@ -1,0 +1,41 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\begin{document}
+
+\[
+  \begin{aligned}
+    \mathbf{M} & = \left\{ \begin{array}{l}
+                             \text{ROLL}  \\[4pt]
+                             \text{PITCH} \\[4pt]
+                             \text{YAW}
+                           \end{array} \right. \\[16pt]
+    %
+    M_x        & = \left\{ \begin{array}{l}
+                             M_{x,\text{aileron}} = 2F_{\text{aileron,R}}\; y_{\text{aileron}}                    \\[6pt]
+                             M_{x,\text{diff-rotors}} = (T_R - T_L)\; y_{\text{rotor}}                            \\[6pt]
+                             M_{x,\text{diff-rudder}} = (F_{\text{rud,R}} - F_{\text{rud,L}})\; y_{\text{rudder}}
+                           \end{array} \right. \\[20pt]
+    %
+    M_y        & = \left\{ \begin{array}{l}
+                             M_{y,\text{wings}} = L_{\text{wings}}\; x_{\text{wings}}                           \\[6pt]
+                             M_{y,\text{drag}} = D_{\text{wings}}\; z_{\text{wings}}                            \\[6pt]
+                             M_{y,\text{rudder}} = (F_{\text{rud,R}} + F_{\text{rud,L}})\; x_{\text{rudder}}    \\[6pt]
+                             M_{y,\text{rotors}} = (T_R + T_L)\; x_{\text{rotors}}                              \\[6pt]
+                             M_{y,\text{tail-lift}} = (L_{\text{tail,R}} + L_{\text{tail,L}})\; x_{\text{tail}} \\[6pt]
+                             M_{y,\text{tail-drag}} = (D_{\text{tail,R}} + D_{\text{tail,L}})\; z_{\text{tail}}
+                           \end{array} \right. \\[20pt]
+    %
+    M_z        & = \left\{ \begin{array}{l}
+                             M_{z,\text{rudder}} = (F_{\text{rud,R}} + F_{\text{rud,L}})\; x_{\text{rudder}}                \\[6pt]
+                             M_{z,\text{rotors}} = C_{Q1}T_1 - C_{Q2}T_2 - C_{Q3}T_3                                        \\[6pt]
+                             M_{z,\text{thrust-horizontal}} = (T_{R,h} - T_{L,h})\; y_{\text{rotor}}                        \\[6pt]
+                             M_{z,\text{aileron-drag}} = (D_{\text{aileron,R}} - D_{\text{aileron,L}})\; y_{\text{aileron}} \\[6pt]
+                             M_{z,\text{tail-lift}} = (L_{\text{tail,R}} - L_{\text{tail,L}})\; y_{\text{tail}}
+                           \end{array} \right.
+  \end{aligned}
+\]
+
+\end{document}

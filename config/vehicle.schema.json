@@ -1,0 +1,560 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vtol26:vehicle:1",
+  "title": "VTOL26 nine-actuator vehicle configuration",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "vehicle_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "calibration_status": {
+          "enum": [
+            "placeholder",
+            "estimated",
+            "measured"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "vehicle_id",
+        "revision",
+        "calibration_status",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "interface": {
+      "type": "object",
+      "properties": {
+        "world_frame": {
+          "const": "NED"
+        },
+        "body_frame": {
+          "const": "FRD"
+        },
+        "quaternion": {
+          "const": "wxyz_body_to_ned"
+        },
+        "plant_thrust_unit": {
+          "const": "N"
+        },
+        "surface_angle_unit": {
+          "const": "rad"
+        },
+        "motor_command_unit": {
+          "const": "model_command"
+        }
+      },
+      "required": [
+        "world_frame",
+        "body_frame",
+        "quaternion",
+        "plant_thrust_unit",
+        "surface_angle_unit",
+        "motor_command_unit"
+      ],
+      "additionalProperties": false
+    },
+    "rigid_body": {
+      "type": "object",
+      "properties": {
+        "mass_kg": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "inertia_kg_m2": {
+          "$ref": "#/$defs/vector3"
+        },
+        "cg_model_m": {
+          "$ref": "#/$defs/vector3"
+        }
+      },
+      "required": [
+        "mass_kg",
+        "inertia_kg_m2",
+        "cg_model_m"
+      ],
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "air_density_kg_m3": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "gravity_m_s2": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "air_density_kg_m3",
+        "gravity_m_s2"
+      ],
+      "additionalProperties": false
+    },
+    "force_positions_body_m": {
+      "type": "object",
+      "properties": {
+        "wing": {
+          "$ref": "#/$defs/vector3"
+        },
+        "aileron_left": {
+          "$ref": "#/$defs/vector3"
+        },
+        "aileron_right": {
+          "$ref": "#/$defs/vector3"
+        },
+        "motor_left": {
+          "$ref": "#/$defs/vector3"
+        },
+        "motor_right": {
+          "$ref": "#/$defs/vector3"
+        },
+        "motor_rear": {
+          "$ref": "#/$defs/vector3"
+        },
+        "cola_left": {
+          "$ref": "#/$defs/vector3"
+        },
+        "cola_right": {
+          "$ref": "#/$defs/vector3"
+        },
+        "ruddervator_left": {
+          "$ref": "#/$defs/vector3"
+        },
+        "ruddervator_right": {
+          "$ref": "#/$defs/vector3"
+        }
+      },
+      "required": [
+        "wing",
+        "aileron_left",
+        "aileron_right",
+        "motor_left",
+        "motor_right",
+        "motor_rear",
+        "cola_left",
+        "cola_right",
+        "ruddervator_left",
+        "ruddervator_right"
+      ],
+      "additionalProperties": false
+    },
+    "aerodynamics": {
+      "type": "object",
+      "properties": {
+        "wing": {
+          "type": "object",
+          "properties": {
+            "area_m2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cl0": {
+              "type": "number"
+            },
+            "cl_alpha_per_rad": {
+              "type": "number"
+            },
+            "cd0": {
+              "type": "number",
+              "minimum": 0
+            },
+            "induced_drag_factor": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "area_m2",
+            "cl0",
+            "cl_alpha_per_rad",
+            "cd0",
+            "induced_drag_factor"
+          ],
+          "additionalProperties": false
+        },
+        "aileron": {
+          "type": "object",
+          "properties": {
+            "area_per_side_m2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cl_per_rad": {
+              "type": "number"
+            },
+            "cd_per_rad": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "area_per_side_m2",
+            "cl_per_rad",
+            "cd_per_rad"
+          ],
+          "additionalProperties": false
+        },
+        "cola": {
+          "type": "object",
+          "properties": {
+            "area_per_side_m2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cl_per_rad": {
+              "type": "number"
+            },
+            "cd_per_rad": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cant_angle_rad": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1.5707963267948966
+            }
+          },
+          "required": [
+            "area_per_side_m2",
+            "cl_per_rad",
+            "cd_per_rad",
+            "cant_angle_rad"
+          ],
+          "additionalProperties": false
+        },
+        "ruddervator": {
+          "type": "object",
+          "properties": {
+            "area_per_side_m2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cl_per_rad": {
+              "type": "number"
+            },
+            "cd_per_rad": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cant_angle_rad": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1.5707963267948966
+            }
+          },
+          "required": [
+            "area_per_side_m2",
+            "cl_per_rad",
+            "cd_per_rad",
+            "cant_angle_rad"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "wing",
+        "aileron",
+        "cola",
+        "ruddervator"
+      ],
+      "additionalProperties": false
+    },
+    "propulsion": {
+      "type": "object",
+      "properties": {
+        "law": {
+          "const": "linear"
+        },
+        "k_t_n_per_command": {
+          "$ref": "#/$defs/vector3"
+        },
+        "reaction_torque_per_thrust_m": {
+          "$ref": "#/$defs/vector3"
+        }
+      },
+      "required": [
+        "law",
+        "k_t_n_per_command",
+        "reaction_torque_per_thrust_m"
+      ],
+      "additionalProperties": false
+    },
+    "actuators": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "motor_left"
+                },
+                "input_unit": {
+                  "const": "model_command"
+                },
+                "px4_function": {
+                  "const": "Motor1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "motor_right"
+                },
+                "input_unit": {
+                  "const": "model_command"
+                },
+                "px4_function": {
+                  "const": "Motor2"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "motor_rear"
+                },
+                "input_unit": {
+                  "const": "model_command"
+                },
+                "px4_function": {
+                  "const": "Motor3"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "tilt_left"
+                },
+                "input_unit": {
+                  "const": "rad"
+                },
+                "px4_function": {
+                  "const": "Servo1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "tilt_right"
+                },
+                "input_unit": {
+                  "const": "rad"
+                },
+                "px4_function": {
+                  "const": "Servo2"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "ruddervator_left"
+                },
+                "input_unit": {
+                  "const": "rad"
+                },
+                "px4_function": {
+                  "const": "Servo3"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "ruddervator_right"
+                },
+                "input_unit": {
+                  "const": "rad"
+                },
+                "px4_function": {
+                  "const": "Servo4"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "aileron_left"
+                },
+                "input_unit": {
+                  "const": "rad"
+                },
+                "px4_function": {
+                  "const": "Servo5"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/actuator"
+            },
+            {
+              "properties": {
+                "name": {
+                  "const": "aileron_right"
+                },
+                "input_unit": {
+                  "const": "rad"
+                },
+                "px4_function": {
+                  "const": "Servo6"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "minItems": 9,
+      "maxItems": 9,
+      "items": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "metadata",
+    "interface",
+    "rigid_body",
+    "environment",
+    "force_positions_body_m",
+    "aerodynamics",
+    "propulsion",
+    "actuators"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "vector3": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "actuator": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "input_unit": {
+          "enum": [
+            "model_command",
+            "rad"
+          ]
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "neutral": {
+          "type": "number"
+        },
+        "disarmed": {
+          "type": "number"
+        },
+        "px4_function": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hil_channel": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        }
+      },
+      "required": [
+        "name",
+        "input_unit",
+        "min",
+        "max",
+        "neutral",
+        "disarmed",
+        "px4_function",
+        "hil_channel"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

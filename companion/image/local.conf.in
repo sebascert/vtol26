@@ -1,0 +1,28 @@
+MACHINE = "raspberrypi4-64"
+DISTRO = "poky"
+PACKAGE_CLASSES = "package_rpm"
+INIT_MANAGER = "systemd"
+DISTRO_FEATURES:append = " usrmerge"
+# This Ethernet-only image does not need the BSP's wireless firmware.
+DISTRO_FEATURES:remove = "wifi bluetooth"
+MACHINE_FEATURES:remove = "wifi bluetooth"
+MACHINE_EXTRA_RRECOMMENDS:remove = "linux-firmware-rpidistro-bcm43455 linux-firmware-rpidistro-bcm43456 bluez-firmware-rpidistro-bcm4345c0-hcd bluez-firmware-rpidistro-bcm4345c5-hcd"
+EXTRA_IMAGE_FEATURES = ""
+VTOL_PROVISION_DIR = "@PROVISION@"
+DL_DIR = "${TOPDIR}/../downloads"
+SSTATE_DIR = "${TOPDIR}/../sstate-cache"
+BB_NUMBER_THREADS = "2"
+PARALLEL_MAKE = "-j 2"
+
+# Use the firmware loader directly; reserve the PL011 UART for the Pixhawk.
+RPI_USE_U_BOOT = "0"
+ENABLE_UART = "1"
+RPI_EXTRA_CONFIG = "dtoverlay=disable-bt"
+CMDLINE_SERIAL = ""
+SERIAL_CONSOLES = ""
+GPU_MEM = "64"
+
+hostname:pn-base-files = "vtol-companion"
+PACKAGECONFIG:append:pn-systemd = " networkd"
+
+CONF_VERSION = "2"

@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "metadata": {
+    "vehicle_id": "vtol26-reference",
+    "revision": "synthetic-1",
+    "calibration_status": "placeholder",
+    "source": "Synthetic test fixture based on docs/model/vtol_model.tex; not aircraft measurements."
+  },
+  "interface": {
+    "world_frame": "NED",
+    "body_frame": "FRD",
+    "quaternion": "wxyz_body_to_ned",
+    "plant_thrust_unit": "N",
+    "surface_angle_unit": "rad",
+    "motor_command_unit": "model_command"
+  },
+  "rigid_body": {
+    "mass_kg": 4.0,
+    "inertia_kg_m2": [
+      0.12,
+      0.15,
+      0.22
+    ],
+    "cg_model_m": [
+      0,
+      0,
+      0
+    ]
+  },
+  "environment": {
+    "air_density_kg_m3": 1.225,
+    "gravity_m_s2": 9.81
+  },
+  "force_positions_body_m": {
+    "wing": [
+      0.6,
+      0,
+      0
+    ],
+    "aileron_left": [
+      0.7,
+      -0.3,
+      0
+    ],
+    "aileron_right": [
+      0.7,
+      0.3,
+      0
+    ],
+    "motor_left": [
+      0.5,
+      -0.25,
+      0
+    ],
+    "motor_right": [
+      0.5,
+      0.25,
+      0
+    ],
+    "motor_rear": [
+      -0.6,
+      0,
+      0
+    ],
+    "cola_left": [
+      -0.7,
+      -0.25,
+      0
+    ],
+    "cola_right": [
+      -0.7,
+      0.25,
+      0
+    ],
+    "ruddervator_left": [
+      -0.75,
+      -0.2,
+      0
+    ],
+    "ruddervator_right": [
+      -0.75,
+      0.2,
+      0
+    ]
+  },
+  "aerodynamics": {
+    "wing": {
+      "area_m2": 0.28,
+      "cl0": 0.28,
+      "cl_alpha_per_rad": 4.6,
+      "cd0": 0.028,
+      "induced_drag_factor": 0.06
+    },
+    "aileron": {
+      "area_per_side_m2": 0.03,
+      "cl_per_rad": 0.32,
+      "cd_per_rad": 0.015
+    },
+    "cola": {
+      "area_per_side_m2": 0.05,
+      "cl_per_rad": 0.52,
+      "cd_per_rad": 0.016,
+      "cant_angle_rad": 0.7853981633974483
+    },
+    "ruddervator": {
+      "area_per_side_m2": 0.02,
+      "cl_per_rad": 0.28,
+      "cd_per_rad": 0.012,
+      "cant_angle_rad": 0.7853981633974483
+    }
+  },
+  "propulsion": {
+    "law": "linear",
+    "k_t_n_per_command": [
+      0.01,
+      0.01,
+      0.01
+    ],
+    "reaction_torque_per_thrust_m": [
+      0,
+      0,
+      0
+    ]
+  },
+  "actuators": [
+    {
+      "name": "motor_left",
+      "input_unit": "model_command",
+      "min": 0,
+      "max": 2000,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Motor1",
+      "hil_channel": 1
+    },
+    {
+      "name": "motor_right",
+      "input_unit": "model_command",
+      "min": 0,
+      "max": 2000,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Motor2",
+      "hil_channel": 2
+    },
+    {
+      "name": "motor_rear",
+      "input_unit": "model_command",
+      "min": 0,
+      "max": 2000,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Motor3",
+      "hil_channel": 3
+    },
+    {
+      "name": "tilt_left",
+      "input_unit": "rad",
+      "min": 0,
+      "max": 1.5707963267948966,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Servo1",
+      "hil_channel": 4
+    },
+    {
+      "name": "tilt_right",
+      "input_unit": "rad",
+      "min": 0,
+      "max": 1.5707963267948966,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Servo2",
+      "hil_channel": 5
+    },
+    {
+      "name": "ruddervator_left",
+      "input_unit": "rad",
+      "min": -0.5,
+      "max": 0.5,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Servo3",
+      "hil_channel": 6
+    },
+    {
+      "name": "ruddervator_right",
+      "input_unit": "rad",
+      "min": -0.5,
+      "max": 0.5,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Servo4",
+      "hil_channel": 7
+    },
+    {
+      "name": "aileron_left",
+      "input_unit": "rad",
+      "min": -0.5,
+      "max": 0.5,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Servo5",
+      "hil_channel": 8
+    },
+    {
+      "name": "aileron_right",
+      "input_unit": "rad",
+      "min": -0.5,
+      "max": 0.5,
+      "neutral": 0,
+      "disarmed": 0,
+      "px4_function": "Servo6",
+      "hil_channel": 9
+    }
+  ]
+}

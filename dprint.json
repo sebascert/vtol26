@@ -1,0 +1,19 @@
+{
+  "markdown": {
+    "textWrap": "always"
+  },
+  "yaml": {
+  },
+  "excludes": [],
+  "plugins": [
+    "https://plugins.dprint.dev/markdown-0.19.0.wasm",
+    "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.5.1.wasm",
+    "npm:@dprint/clang-format@0.3.2",
+    "npm:@dprint/shfmt@0.2.0",
+    "npm:@dprint/ruff@0.12.3",
+    "npm:@dprint/json@0.26.0",
+    "https://plugins.dprint.dev/sargunv/dprint-cmakefmt-0.1.0.wasm",
+    "npm:lax-markup@0.3.2",
+    "https://plugins.dprint.dev/jolars/badness-v1.5.0.wasm"
+  ]
+}
