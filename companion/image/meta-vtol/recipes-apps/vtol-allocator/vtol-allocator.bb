@@ -27,6 +27,7 @@ do_install:append() {
     install -m 0644 ${S}/config/vehicle.json ${S}/config/validate_vehicle.py ${S}/config/vehicle.schema.json ${S}/config/requirements.txt ${D}/home/vtol/.local/share/vtol26/config/
     chown -R vtol:vtol ${D}/home/vtol
     rm -rf ${D}${datadir}/vtol26
+    rmdir --ignore-fail-on-non-empty "${D}${datadir}"
     # CMake installs for the desktop prefix; the image uses Yocto's managed paths.
     if [ "${libdir}/systemd/system" != "${systemd_system_unitdir}" ]; then
         mv ${D}${libdir}/systemd/system/vtol_allocator@.service ${D}${systemd_system_unitdir}/

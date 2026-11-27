@@ -251,6 +251,7 @@ class ImageTest(unittest.TestCase):
         }.items():
             body = body.replace("${" + key + "}", value)
         subprocess.run(["sh", "-eu", "-c", body], check=True)
+        self.assertFalse((stage / "usr/share").exists())
         installed = template.read_text()
         self.assertIn("ExecStart=/usr/bin/vtol_allocator", installed)
         self.assertIn("--pso-config /etc/vtol/pso.json", installed)
@@ -308,6 +309,7 @@ class ImageTest(unittest.TestCase):
             ).is_file()
         )
         shared = stage / "usr/share/keep.txt"
+        shared.parent.mkdir()
         shared.write_text("preserve shared data\n")
         config.parent.mkdir(parents=True)
         config.write_text('{"calibration":"example"}\n')
