@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <!-- Visual-only survey markers in Gazebo ENU. These visuals have no collision geometry. -->
+  <model name="waypoint_camera">
+    <static>true</static>
+    <link name="tripod">
+      <sensor name="overview" type="camera">
+        <pose>2.15 -2.35 2.10 0 0.515 2.202</pose>
+        <always_on>true</always_on>
+        <update_rate>25</update_rate>
+        <topic>/waypoints/image</topic>
+        <camera>
+          <triggered>true</triggered>
+          <trigger_topic>/waypoints/shutter</trigger_topic>
+          <horizontal_fov>0.73</horizontal_fov>
+          <image><width>960</width><height>540</height></image>
+          <clip><near>0.05</near><far>100</far></clip>
+        </camera>
+      </sensor>
+      <visual name="apron">
+        <pose>0.25 0.25 0.0005 0 0 0</pose>
+        <geometry><box><size>12 12 0.001</size></box></geometry>
+        <material><ambient>0.20 0.24 0.27 1</ambient><diffuse>0.20 0.24 0.27 1</diffuse></material>
+      </visual>
+      <visual name="north_leg">
+        <pose>0 0.25 0.0013 0 0 0</pose>
+        <geometry><box><size>0.012 0.5 0.0004</size></box></geometry>
+        <material><ambient>0.55 0.62 0.65 1</ambient><diffuse>0.55 0.62 0.65 1</diffuse></material>
+      </visual>
+      <visual name="east_leg">
+        <pose>0.25 0.5 0.0013 0 0 0</pose>
+        <geometry><box><size>0.5 0.012 0.0004</size></box></geometry>
+        <material><ambient>0.55 0.62 0.65 1</ambient><diffuse>0.55 0.62 0.65 1</diffuse></material>
+      </visual>
+      <visual name="return_leg">
+        <pose>0.25 0.25 0.0013 0 0 0.785398</pose>
+        <geometry><box><size>0.707 0.012 0.0004</size></box></geometry>
+        <material><ambient>0.55 0.62 0.65 1</ambient><diffuse>0.55 0.62 0.65 1</diffuse></material>
+      </visual>
+      <visual name="home">
+        <pose>0 0 0.002 0 0 0</pose>
+        <geometry><cylinder><radius>0.16</radius><length>0.003</length></cylinder></geometry>
+        <material><ambient>0.06 0.57 0.63 1</ambient><diffuse>0.06 0.57 0.63 1</diffuse></material>
+      </visual>
+      <visual name="north">
+        <pose>0 0.5 0.002 0 0 0</pose>
+        <geometry><cylinder><radius>0.16</radius><length>0.003</length></cylinder></geometry>
+        <material><ambient>0.94 0.55 0.12 1</ambient><diffuse>0.94 0.55 0.12 1</diffuse></material>
+      </visual>
+      <visual name="east">
+        <pose>0.5 0.5 0.002 0 0 0</pose>
+        <geometry><cylinder><radius>0.16</radius><length>0.003</length></cylinder></geometry>
+        <material><ambient>0.41 0.47 0.95 1</ambient><diffuse>0.41 0.47 0.95 1</diffuse></material>
+      </visual>
+    </link>
+  </model>
+</sdf>

@@ -124,3 +124,45 @@ still require hardware validation.
 
 Validator calls use `~/.local/share/vtol26/config/venv/bin/python3`, created by
 `./config/install.sh` with the dependencies in `config/requirements.txt`.
+
+## Record a waypoint flight
+
+With the SIL builds and the installed vehicle configuration in place, run this
+from the project root:
+
+```sh
+controller/build/venv/bin/python3 controller/vtol_tests/gazebo_closed_loop.py --waypoint-demo
+```
+
+On the [Pixhawk HIL bench](../docs/guides/hil_simulation.md), run
+`./simulation/run-hil.sh` with one Pixhawk 6C on USB. The desktop demo requests
+the same route with `--port <virtual-port> --waypoints`. Desktop PX4 and the
+companion allocator fly a 0.30 m hover, 2.0 m north, 2.0 m east, and back to the
+launch pad. The demo requires one second within 0.055 m of each requested
+position in Gazebo, then PX4 landing and disarm. The recording uses the run's
+measured Gazebo position and attitude at each video timestamp. A second,
+headless Gazebo process renders the aircraft after the flight. The renderer uses
+the saved waypoints to place the home (teal), north (amber) and east (blue) pads
+and frame the route with a fixed camera. The overlay gives displacement and
+height relative to launch. During landing the controller continues to request
+descent until PX4 detects ground contact and low thrust. The resulting
+positive-down setpoints and the measured ground position are both visible in the
+trace.
+
+The renderer uses Pillow, the DejaVu Sans font and an H.264-enabled FFmpeg. On
+the project VM, Pillow and the font are provided by Ubuntu. When `ffmpeg` is
+absent, install the optional encoder in the simulation environment:
+
+```sh
+simulation/build/venv/bin/python3 -m pip install imageio-ffmpeg
+```
+
+The runner prints its `controller/build/waypoint-flight-*` directory. It holds
+`waypoints.mp4`, `result.json` with the requested and measured arrivals,
+`waypoint-trace.csv` with commanded and measured NED offsets, and
+`world/pose.csv` with timestamped positions and Gazebo world quaternions. To
+render an existing successful flight again:
+
+```sh
+simulation/build/venv/bin/python3 simulation/render_waypoints.py /path/to/waypoint-flight-run
+```

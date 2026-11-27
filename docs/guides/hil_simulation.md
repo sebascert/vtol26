@@ -1,180 +1,132 @@
 # HIL simulation
 
-Gazebo runs on the host computer, PX4 on the Pixhawk, and the allocator on the
-Raspberry Pi. Run host computer commands from the project root.
+Gazebo runs on the Linux host, PX4 on the Pixhawk 6C, and the allocator on the
+Raspberry Pi. Run host commands from the project root. Remove propellers and
+keep motor and servo power disconnected throughout the bench run.
 
-For a desktop rehearsal, follow the
-[SIL build and run instructions](../../README.md#testing). The same bridge,
-vehicle configuration, HIL messages and PX4 profile run on both setups. Physical
-UART behavior and Pi solve times require the hardware bench.
+## One-time configuration
 
-Keep physical motor/servo power disconnected throughout this simulation.
-
-1. Follow the [Pixhawk flashing guide](flash_pixhawk.md) and
-   [Raspberry Pi flashing guide](flash_raspberry_pi.md). Use the same
-   `config/vehicle.json` for both builds and the simulation.
-
-   Build the simulation on the host computer:
+1. Install the shared vehicle configuration and build the host simulator.
 
    ```sh
+   ./config/install.sh
    ./simulation/build.sh
    ```
 
-2. Follow the [wiring guide](connect_companion_uart.md).
+2. [Build and flash the Pixhawk](flash_pixhawk.md) and
+   [flash the project Pi image](flash_raspberry_pi.md) using the same vehicle
+   configuration. `./controller/build.sh firmware` defaults a board with no
+   saved airframe to Stallion HIL **22001**. That profile sets `SYS_HITL=1`, USB
+   MAVLink Config mode and TELEM2 at **230400 baud**. The Pi image starts the
+   matching allocator at boot. Reuse these builds for repeat runs. Rebuild and
+   reflash the affected components when their software or vehicle configuration
+   changes.
 
-3. Connect to the Pi by SSH in a separate terminal:
-
-   ```sh
-   ssh vtol-companion
-   ```
-
-   Keep this terminal open.
-
-4. Open QGroundControl and connect the Pixhawk to the host computer by USB. Wait
-   for the vehicle to be detected and its parameters to finish loading.
-
-5. In **QGroundControl → Q icon → Analyze → MAVLink Console**, select the HIL
-   profile and reboot:
+   **Previously configured Pixhawk only.** Flashing preserves an explicitly
+   saved airframe. If switching from another airframe, save its flight
+   parameters first. With QGroundControl connected directly by USB, open **Q
+   icon → Analyze → MAVLink Console** and select the HIL airframe once.
 
    ```text
    param set SYS_AUTOSTART 22001
-   param set SYS_HITL 1
-   param set USB_MAV_MODE 5
    param save
    reboot
    ```
 
-6. Open **Q icon → Settings → Comm Links** in the left sidebar. Under
-   **Auto-Connect**, disable **Pixhawk** and leave **UDP** enabled. Older
-   versions show these options under **General → AutoConnect to the following
-   devices**. See the
-   [QGroundControl Comm Links reference](https://docs.qgroundcontrol.com/master/en/qgc-user-guide/settings_view/comm_links.html).
+3. [Wire TELEM2 to the Pi](connect_companion_uart.md#1-connect-the-wires) with
+   both boards powered off. Use USB for the Pixhawk and a separate USB-C supply
+   for the Pi.
+4. In **QGroundControl → Settings → Comm Links → Auto-Connect**, disable
+   **Pixhawk** and enable **UDP**. Quit QGroundControl once to release the USB
+   port. The launcher uses USB and forwards QGroundControl traffic over loopback
+   UDP port **14550**.
+   [QGroundControl Comm Links reference](https://docs.qgroundcontrol.com/master/en/qgc-user-guide/settings_view/comm_links.html)
 
-   Then **quit QGroundControl completely** and unplug Pixhawk USB.
+## Repeat a waypoint run
 
-7. Reconnect Pixhawk USB to the host computer. Keep the Pi powered through USB-C
-   and physical motor/servo power disconnected for the remaining steps. Start
-   Gazebo from a host computer terminal:
-
-   ```sh
-   ls -l /dev/serial/by-id/
-   ./simulation/run-hil.sh --port /dev/serial/by-id/YOUR_PIXHAWK --target 0 0 -0.3
-   ```
-
-   Replace `YOUR_PIXHAWK` with the listed device. Append `--headless` to hide
-   the Gazebo window. Keep this terminal running; do not start another Gazebo or
-   desktop PX4 instance. The target is NED position `(0, 0, -0.3)` metres
-   relative to PX4's local origin, with yaw zero.
-
-   If the port is busy, close its owner before retrying:
+1. Connect the disarmed Pixhawk by USB to the simulator host and power the Pi.
+   On a fresh Pi boot the allocator starts automatically. If the Pixhawk
+   rebooted while the Pi stayed on, restart the allocator once so it accepts
+   timestamps from the new PX4 boot. From a host with
+   [companion SSH access](../../companion/README.md#connect-to-the-companion),
+   run `ssh vtol-companion sudo systemctl restart vtol_allocator@vtol.service`.
+2. Start the simulator on the host.
 
    ```sh
-   sudo fuser -v /dev/serial/by-id/YOUR_PIXHAWK
+   ./simulation/run-hil.sh
    ```
 
-8. Wait for `ready: true` and increasing `imu`, `gps` and `controls` counts.
-   Reopen QGroundControl; it connects automatically over **UDP 14550** with UDP
-   Auto-Connect enabled. Keep automatic USB connections disabled. After about 15
-   seconds, open **Q icon → Analyze → MAVLink Console**:
+   The launcher detects a single Pixhawk 6C and selects the waypoint route. Open
+   QGroundControl on the same host. Wait for `Waypoint: on pad` and complete the
+   [before-arming checks](#sanity-checks).
+3. In QGroundControl's **Analyze → MAVLink Console**, enter
+   `commander mode offboard`. Confirm Offboard and preflight readiness, then
+   enter `commander arm`. Never force arm. The vehicle climbs 0.30 m, travels 2
+   m north and 2 m east, returns diagonally and descends, facing north
+   throughout. Gazebo must measure one continuous second within 5.5 cm of each
+   destination before the route advances.
+4. At `Waypoint: landed`, enter `commander disarm`. Confirm `Waypoint: disarmed`
+   and zero motor outputs, then press Ctrl+C in the host terminal.
+   `simulation/build/hil/waypoints.json` records arrivals and the final result.
+   `waypoint-trace.csv` and `pose.csv` hold the requested and measured path. The
+   next run reuses this directory. Pass `--output-dir PATH` to keep separate
+   runs.
 
-   ```text
-   listener vehicle_local_position
-   listener pso_actuator_outputs
-   ```
+## Sanity checks
 
-   Continue only when `xy_valid`, `z_valid`, `v_xy_valid` and `v_z_valid` are
-   `True`, outputs show `active: False`, and the first three controls (motors)
-   are zero. `heading_good_for_control: False` is normal on the ground. If a
-   check fails, stay disarmed and see troubleshooting below.
+- **Before arming**, the host should show `"ready": true`, increasing `imu`,
+  `gps` and `controls` counts, and `Waypoint: on pad`. In the PX4 console,
+  `listener vehicle_local_position` should report `xy_valid`, `z_valid`,
+  `v_xy_valid` and `v_z_valid` as true. `listener pso_actuator_outputs` should
+  report inactive outputs and zero for the first three controls (motors).
+- **After requesting Offboard**, check `listener vehicle_status` for
+  `nav_state: 14` and `pre_flight_checks_pass: True` before arming.
+  `listener trajectory_setpoint` should show a fresh target at the pad with yaw
+  zero.
+- **While flying**, watch Gazebo and the route phases in the host terminal. To
+  confirm the Pi feedback loop, inspect `listener pso_allocation` for advancing
+  timestamps, nine values, version 1 and source 245/191. After spool-up,
+  `listener pso_actuator_outputs` should report `active: True` and `reason: 0`.
+- **After disarming**, confirm `listener pso_actuator_outputs` reports inactive
+  outputs and zero for the three motors.
 
-9. In the Pi's SSH terminal, restart and check the allocator service:
+## Overrides and troubleshooting
 
-   ```sh
-   sudo systemctl restart vtol_allocator@vtol.service
-   systemctl status vtol_allocator@vtol.service --no-pager
-   systemctl show vtol_allocator@vtol.service -p ExecStart
-   sudo journalctl -u vtol_allocator@vtol.service -f -o cat
-   ```
+- **USB detection.** With multiple boards or missing USB metadata, choose the
+  device with
+  `./simulation/run-hil.sh --port /dev/serial/by-id/YOUR_PIXHAWK --waypoints`.
+  `--port` alone preserves bridge-only operation for external target senders.
+  For a busy port, check `sudo fuser -v /dev/serial/by-id/YOUR_PIXHAWK` and
+  close its owner.
+- **Other modes.** Add `--headless` for a host without a display. Use
+  `--bridge-only` for an external target sender or `--target 0 0 -0.3` for fixed
+  hover. A fixed target is absolute in PX4 local NED. Check its height against
+  the pad and disarm manually at the end of the hover.
+- **No bridge readiness or controls.** Check `param show SYS_AUTOSTART` in the
+  PX4 console. A board with a saved airframe can require the one-time selection
+  above. With profile 22001 running, `mavlink status` and
+  `mavlink status streams` should show USB in Config mode with
+  `HIL_ACTUATOR_CONTROLS` and TELEM2 in Onboard mode at 230400 baud with flow
+  control off.
+- **Invalid position.** Check `listener estimator_gps_status`,
+  `listener estimator_status_flags` and `listener vehicle_magnetometer`. Look
+  for passing GPS checks, `cs_yaw_align: True` and recent magnetometer
+  timestamps. `heading_good_for_control: False` can be normal on the ground.
+- **Missing allocations.** On the Pi, check
+  `systemctl status vtol_allocator@vtol.service`,
+  `systemctl show vtol_allocator@vtol.service -p ExecStart` and
+  `sudo journalctl -u vtol_allocator@vtol.service -n 20`. Expect one service on
+  `/dev/serial0` at 230400 baud with `--pso-period-ms 20`. It can wait for fresh
+  state and targets while disarmed. Look for allocation JSON after arming.
+- **Route abort or inactive outputs.** Read the reason after
+  `Waypoint: aborted`. In `pso_actuator_outputs`, reason 1 indicates arming or
+  mode inhibition, 2 invalid or stale state or target, 3 a missing or invalid
+  allocation, and 4 a latched fault. Disarm before restarting. If PX4 refuses
+  disarm while airborne in simulation, stop the bridge, reboot the Pixhawk and
+  confirm disarm before restarting from the pad.
 
-   Expect the service running on `/dev/serial0` at **230400 baud**, with
-   `--pso-period-ms 20`. Leave it running; do not start a second allocator.
-   Restart it after each Pixhawk reboot: the allocator remembers target
-   timestamps from the previous boot and can reject the new boot's targets.
-   `Waiting for fresh PX4 state and pose targets.` can be expected before
-   step 10. Allocation JSON appears only after fresh PX4 heartbeat, attitude,
-   local position and both position/attitude targets arrive. The startup message
-   alone does not confirm UART communication.
-
-10. In QGroundControl's MAVLink console, request Offboard mode:
-
-    ```text
-    commander mode offboard
-    listener vehicle_status
-    listener trajectory_setpoint
-    ```
-
-    Confirm `nav_state: 14` (Offboard), `pre_flight_checks_pass: True`, and a
-    fresh trajectory with position `[0, 0, -0.3]` and yaw zero. Confirm this
-    target represents a small rise from the simulated ground position. While
-    disarmed, PX4 can publish `nan` processed position setpoints and the Pi can
-    remain waiting; check allocations after arming below.
-
-11. With these checks passing and physical actuator power disconnected, arm:
-
-    ```text
-    commander arm
-    listener vehicle_status
-    listener pso_allocation
-    listener pso_actuator_outputs
-    listener vehicle_local_position
-    ```
-
-    Do not force arm. After spool-up, expect allocations with nine values,
-    protocol version **1**, source **245/191** and advancing timestamps, plus
-    allocation JSON in the Pi journal. Outputs should show `active: True` and
-    `reason: 0`, with increasing bridge `controls` and movement toward the
-    target in Gazebo. Together these confirm the complete Gazebo → PX4 → Pi →
-    PX4 → Gazebo feedback loop.
-
-    If outputs stop, disarm and fix the cause before rearming. Reason **1**
-    means disarmed, wrong mode or another arming inhibition; check the current
-    `vehicle_status` and `actuator_armed`, since PX4 may have auto-disarmed
-    without takeoff. Reason **2** means stale/invalid state or target, **3**
-    missing/invalid allocation, and **4** a latched fault. PX4 rejects
-    allocations based on state older than **250 ms**.
-
-12. End the virtual experiment from the MAVLink console:
-
-    ```text
-    commander disarm
-    listener pso_actuator_outputs
-    ```
-
-    Confirm inactive outputs and zero motors, then press Ctrl+C in the bridge
-    terminal. If disarm is refused while airborne, stop the bridge, reboot the
-    Pixhawk and confirm disarmed before another run. The virtual aircraft may
-    fall. Logs are in `simulation/build/hil/` and the Pi service journal.
-
-13. Before returning to real hardware operation, restore the saved flight
-    airframe/parameters, set `SYS_HITL=0` and reboot. Keep actuator power
-    disconnected until the flight configuration is restored.
-
-Vehicle values are synthetic. Physical Pi timing and armed HIL operation still
-need validation; motor-stop-on-loss is a simulation bench policy.
-
-<details>
-<summary>Connection and estimator troubleshooting</summary>
-
-- **Bridge `controls` stays zero:** run `mavlink status` and
-  `mavlink status streams`. USB should use **Config** mode and send
-  `HIL_ACTUATOR_CONTROLS`; TELEM2 should use **Onboard**, 230400 baud, flow
-  control off. If USB uses Onboard, set `USB_MAV_MODE=5`, save, reboot and
-  repeat steps 6–8.
-- **Position stays invalid:** run `listener estimator_gps_status`,
-  `listener estimator_status_flags` and `listener vehicle_magnetometer`. GPS
-  checks should pass, `cs_yaw_align` should be `True`, and the magnetometer
-  timestamp should be recent. Older bridges without magnetic sensor noise can
-  trigger PX4's stuck-sensor detector; use the current bridge, reboot the
-  disarmed Pixhawk and repeat steps 6–8. No simulation rebuild is needed.
-
-</details>
+Before returning the board to physical operation, restore the saved flight
+airframe and parameters, set `SYS_HITL=0` and reboot with actuator power
+disconnected. The Stallion HIL profile uses simulated outputs and synthetic
+vehicle values. For a board-free rehearsal of this route, see the
+[desktop waypoint demo](../../simulation/README.md#record-a-waypoint-flight).

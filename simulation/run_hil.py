@@ -1,6 +1,8 @@
 """Run Gazebo and the shared HIL transport, with optional GCS and target traffic."""
 
 import argparse
+from contextlib import nullcontext
+import csv
 import json
 import math
 import os
@@ -16,6 +18,9 @@ from gz.transport13 import Node
 from hil_bridge import Bridge
 from pymavlink import mavutil
 from pymavlink.dialects.v20 import common as mav
+from serial.tools import list_ports
+
+from waypoint_route import WaypointRoute
 
 SIMULATION = Path(__file__).resolve().parent
 
@@ -26,7 +31,7 @@ class Scenario:
         self.last_target = 0
         self.pacing = None
 
-    def tick(self, bridge, now):
+    def tick(self, bridge, now, down_speed=0.0):
         if not bridge.ready_to_forward(now):
             self.pacing = None
             return
@@ -36,11 +41,11 @@ class Scenario:
                 bridge.system,
                 1,
                 mav.MAV_FRAME_LOCAL_NED,
-                2552,
+                2520 if down_speed else 2552,
                 *self.target,
                 0,
                 0,
-                0,
+                down_speed,
                 0,
                 0,
                 0,
@@ -59,17 +64,34 @@ class Scenario:
             self.pacing = (now, bridge.sim_time)
 
 
-def main():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--port", required=True, help="dedicated Pixhawk USB device or test transport"
+        "--port",
+        help="explicit Pixhawk device or test transport (default: detect a single Pixhawk 6C)",
     )
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--headless", action="store_true")
     parser.add_argument(
-        "--gcs", default="127.0.0.1:14550", help="local GCS UDP destination"
+        "--trace-pose",
+        action="store_true",
+        help="save measured Gazebo positions and attitudes in pose.csv",
     )
     parser.add_argument(
+        "--gcs", default="127.0.0.1:14550", help="local GCS UDP destination"
+    )
+    targets = parser.add_mutually_exclusive_group()
+    targets.add_argument(
+        "--waypoints",
+        action="store_true",
+        help="fly the SIL route after Offboard arming (default with USB auto-detection)",
+    )
+    targets.add_argument(
+        "--bridge-only",
+        action="store_true",
+        help="leave target generation to an external sender (default with explicit --port)",
+    )
+    targets.add_argument(
         "--target",
         nargs=3,
         type=float,
@@ -80,11 +102,35 @@ def main():
     parser.add_argument(
         "--seed", type=int, help="random seed for Gazebo and sensor noise"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.target and not all(
         math.isfinite(v) and abs(v) <= 10000 for v in args.target
     ):
         parser.error("Target must contain finite local NED coordinates within 10 km")
+    if args.port is None:
+        # The application and bootloader share USB IDs but advertise different products.
+        devices = sorted(
+            port.device
+            for port in list_ports.comports()
+            if (port.vid, port.pid, port.product) == (0x3185, 0x0038, "PX4 FMU v6C.x")
+        )
+        if not devices:
+            parser.error(
+                "No running Pixhawk 6C detected. Connect one by USB or use "
+                "--port DEVICE --waypoints to run the route."
+            )
+        if len(devices) > 1:
+            parser.error(
+                f"Multiple Pixhawk 6C devices detected ({', '.join(devices)}). "
+                "Select one with --port DEVICE --waypoints to run the route."
+            )
+        args.port = devices[0]
+        args.waypoints = args.target is None and not args.bridge_only
+    return args
+
+
+def main():
+    args = parse_args()
     output = args.output_dir.resolve()
     subprocess.run(
         [
@@ -128,6 +174,8 @@ def main():
     publisher = node.advertise(f"/model/{model_name}/actuators_normalized", Actuators)
     bridge = Bridge(link, config, publisher)
     scenario = Scenario(args.target)
+    route = WaypointRoute() if args.waypoints else None
+    reported_phase = None
     running = True
 
     def stop(signum, frame):
@@ -137,7 +185,36 @@ def main():
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
     stats_at = 0
-    with (output / "gazebo.log").open("w") as log:
+    pose_time = 0.0
+    with (
+        (output / "gazebo.log").open("w") as log,
+        (
+            (output / "pose.csv").open("w", buffering=1)
+            if args.trace_pose or route
+            else nullcontext()
+        ) as pose_trace,
+        (
+            (output / "waypoint-trace.csv").open("w", buffering=1)
+            if route
+            else nullcontext()
+        ) as target_trace,
+    ):
+        if pose_trace:
+            pose_trace.write("monotonic_s,north_m,east_m,down_m,qx,qy,qz,qw\n")
+        if target_trace:
+            writer = csv.writer(target_trace)
+            writer.writerow(
+                [
+                    "elapsed_s",
+                    "phase",
+                    "target_n_m",
+                    "target_e_m",
+                    "target_d_m",
+                    "gazebo_n_m",
+                    "gazebo_e_m",
+                    "gazebo_d_m",
+                ]
+            )
         gazebo = subprocess.Popen(
             [
                 "gz",
@@ -168,6 +245,12 @@ def main():
                     )
                     bridge.receive(message, now)
                     if (
+                        route
+                        and message.get_srcSystem() == bridge.system
+                        and message.get_srcComponent() == 1
+                    ):
+                        route.receive(message, now)
+                    if (
                         message.get_type() not in ("BAD_DATA", "HIL_ACTUATOR_CONTROLS")
                         and not internal_sync
                     ):
@@ -182,7 +265,46 @@ def main():
                     ):
                         link.write(message.get_msgbuf())
                 bridge.tick(now, sensors.snapshot())
-                scenario.tick(bridge, now)
+                with sensors.lock:
+                    observation = sensors.pose
+                down_speed = 0.0
+                if route:
+                    reference = route.update(
+                        now, bridge.ready_to_forward(now), observation
+                    )
+                    scenario.target, down_speed = reference or (None, 0.0)
+                    if route.phase != reported_phase:
+                        reported_phase = route.phase
+                        pending = output / "waypoints.json.tmp"
+                        pending.write_text(json.dumps(route.status(), indent=2) + "\n")
+                        pending.replace(output / "waypoints.json")
+                        print(
+                            f"Waypoint: {route.phase}"
+                            + (f" ({route.error})" if route.error else ""),
+                            flush=True,
+                        )
+                scenario.tick(bridge, now, down_speed)
+                if pose_trace and now - pose_time >= 0.04:
+                    if observation and observation[1] - pose_time >= 0.04:
+                        pose, pose_time = observation
+                        pos = pose.position
+                        q = pose.orientation
+                        pose_trace.write(
+                            f"{pose_time},{pos.y},{pos.x},{-pos.z},{q.x},{q.y},{q.z},{q.w}\n"
+                        )
+                        if (
+                            route
+                            and route.started is not None
+                            and pose_time >= route.started
+                        ):
+                            writer.writerow(
+                                [
+                                    pose_time - route.started,
+                                    route.phase,
+                                    *route.offset,
+                                    *route.measured(observation),
+                                ]
+                            )
                 if now - stats_at >= 2:
                     result = dict(
                         bridge.counts,

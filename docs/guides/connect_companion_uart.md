@@ -1,10 +1,9 @@
 # Connect the companion over UART
 
 Connect a Raspberry Pi 4B to the Pixhawk 6C's **TELEM2** port using a
-three-wire, **3.3 V UART** link at **57600 baud, 8N1, no hardware flow control**
-for the normal firmware setup. The HIL companion image and Pixhawk profile
-**22001** use **230400 baud** with the same wiring; follow the
-[Gazebo HIL guide](hil_simulation.md) for that setup.
+three-wire, **3.3 V UART** link with **8N1 and no hardware flow control**. The
+project Pi image and the default Pixhawk HIL profile (22001) both use **230400
+baud**. See the [Gazebo HIL guide](hil_simulation.md) for setup.
 
 ## 1. Connect the wires
 
@@ -36,9 +35,9 @@ separate. Disconnect both supplies before changing any wire.
 ## 3. Check the UART settings
 
 The [companion image][image] enables `/dev/serial0` automatically. The
-[custom Pixhawk firmware][flash-pixhawk] configures TELEM2 for MAVLink at 57600
-baud with flow control off. No manual serial configuration is needed with these
-builds.
+[custom Pixhawk firmware][flash-pixhawk] configures TELEM2 for MAVLink at 230400
+baud with flow control off in profile 22001. The generic service install and
+board settings before airframe overrides use 57600 baud.
 
 On the Pi, check that the UART exists:
 
@@ -59,9 +58,9 @@ Console** and run:
 mavlink status
 ```
 
-Find the **TELEM2** instance: `/dev/ttyS3 @57600`, with flow control **OFF**. A
-nonzero RX rate and received messages from system **245**, component **191**
-confirm that the companion is sending messages to PX4.
+Find the **TELEM2** instance: `/dev/ttyS3 @230400` for HIL, with flow control
+**OFF**. A nonzero RX rate and received messages from system **245**, component
+**191** confirm that the companion is sending messages to PX4.
 
 Use the [companion connection instructions][companion] to establish SSH access.
 On the Pi, check the service and recent logs:

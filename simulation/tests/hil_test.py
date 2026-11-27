@@ -1,10 +1,12 @@
 """HIL wire conversions and gates without a physical board or Gazebo server."""
 
+import io
 import json
 import math
 import struct
 import sys
 import unittest
+from contextlib import redirect_stderr
 from itertools import pairwise
 from pathlib import Path
 from unittest.mock import patch
@@ -14,7 +16,9 @@ import gazebo_sensor_model as sensors
 from gz.msgs10.pose_v_pb2 import Pose_V
 from hil_bridge import Bridge
 from pymavlink.dialects.v20 import common as mav
-from run_hil import SIMULATION, Scenario
+from run_hil import SIMULATION, Scenario, parse_args
+from serial.tools.list_ports_common import ListPortInfo
+from waypoint_route import WaypointRoute
 
 
 class FakePublisher:
@@ -34,6 +38,54 @@ class FakeLink:
 
     def __getattr__(self, name):
         return lambda *args: self.sent.append((name, args))
+
+
+class HilLauncherTest(unittest.TestCase):
+    def port(self, device, product="PX4 FMU v6C.x", vid=0x3185, pid=0x0038):
+        port = ListPortInfo(device)
+        port.product, port.vid, port.pid = product, vid, pid
+        return port
+
+    def test_auto_detect_ignores_other_devices_and_defaults_to_the_route(self):
+        ports = [
+            self.port("/dev/ttyACM0", "PX4 BL FMU v6C.x"),
+            self.port("/dev/ttyUSB0", vid=0x1234),
+            self.port("/dev/ttyACM1"),
+        ]
+        with patch("run_hil.list_ports.comports", return_value=ports):
+            args = parse_args([])
+            self.assertEqual(args.port, "/dev/ttyACM1")
+            self.assertTrue(args.waypoints)
+            self.assertFalse(parse_args(["--bridge-only"]).waypoints)
+            fixed = parse_args(["--target", "0", "0", "-0.3"])
+            self.assertEqual(fixed.target, [0, 0, -0.3])
+            self.assertFalse(fixed.waypoints)
+
+    def test_missing_or_ambiguous_device_requires_explicit_port(self):
+        for ports, expected in [
+            ([], "No running Pixhawk"),
+            ([self.port("/dev/a"), self.port("/dev/b")], "/dev/a, /dev/b"),
+        ]:
+            with (
+                self.subTest(ports=ports),
+                patch("run_hil.list_ports.comports", return_value=ports),
+            ):
+                with (
+                    redirect_stderr(io.StringIO()) as error,
+                    self.assertRaises(SystemExit) as ex,
+                ):
+                    parse_args([])
+                self.assertEqual(ex.exception.code, 2)
+                self.assertIn(expected, error.getvalue())
+
+    def test_explicit_transport_preserves_external_target_sender(self):
+        with patch("run_hil.list_ports.comports", side_effect=AssertionError):
+            args = parse_args(["--port", "/dev/pts/2"])
+            self.assertFalse(args.waypoints)
+            self.assertIsNone(args.target)
+            self.assertTrue(
+                parse_args(["--port", "/dev/pts/2", "--waypoints"]).waypoints
+            )
 
 
 class HilTest(unittest.TestCase):
@@ -279,6 +331,86 @@ class HilTest(unittest.TestCase):
         )
         self.assertEqual(target[5:8], (1, 2, -0.3))
         self.assertFalse(any(n == "command_long_send" for n, a in self.link.sent))
+
+    def test_waypoints_require_a_disarmed_pad_reference_and_offboard(self):
+        self.sensors()
+        for prearm, offboard in [(False, True), (True, False)]:
+            with self.subTest(prearm=prearm, offboard=offboard):
+                route = WaypointRoute()
+                route.receive(
+                    mav.MAVLink_local_position_ned_message(0, 4, 2, -3, 0, 0, 0), 100
+                )
+                if prearm:
+                    route.receive(
+                        mav.MAVLink_heartbeat_message(2, 12, 32, 0, 3, 3), 100
+                    )
+                    self.assertEqual(
+                        route.update(100, True, self.inputs.pose), ((4, 2, -3), 0)
+                    )
+                route.receive(
+                    mav.MAVLink_heartbeat_message(
+                        2, 12, 160, (6 if offboard else 0) << 16, 4, 3
+                    ),
+                    100,
+                )
+                self.assertIsNone(route.update(100, True, self.inputs.pose))
+                self.assertEqual(route.phase, "aborted")
+                self.assertIsNone(route.update(101, True, self.inputs.pose))
+
+    def test_waypoint_holds_require_fresh_measured_pose(self):
+        self.sensors()
+        route = WaypointRoute()
+        pose = self.inputs.pose[0]
+        pose.position.z = 0.25
+        route.receive(mav.MAVLink_local_position_ned_message(0, 4, 2, -3, 0, 0, 0), 100)
+        route.receive(mav.MAVLink_heartbeat_message(2, 12, 32, 6 << 16, 3, 3), 100)
+        route.update(100, True, (pose, 100))
+        route.receive(mav.MAVLink_heartbeat_message(2, 12, 160, 6 << 16, 4, 3), 100)
+        self.assertEqual(route.update(100, True, (pose, 100)), ((4, 2, -3), 0))
+        self.assertEqual(route.update(102, True, (pose, 102)), ((4, 2, -3.3), 0))
+        self.assertEqual(route.phase, "hover")
+        pose.position.z += 0.30
+        for stamp in (103, 103.1, 104.5):
+            route.update(stamp, True, (pose, stamp))
+        self.assertEqual(route.arrivals, [])
+        for step in range(1, 12):
+            stamp = 104.5 + step / 10
+            route.update(stamp, True, (pose, stamp))
+        self.assertEqual(route.phase, "north")
+        self.assertIsNone(route.update(108, False, None))
+        self.assertEqual(route.phase, "aborted")
+
+    def test_waypoint_landing_waits_for_current_px4_confirmation_and_disarm(self):
+        self.connect()
+        self.sensors()
+        self.tick(100)
+        route = WaypointRoute()
+        route.phase = "landing"
+        route.started = 99
+        route.begin = 100
+        route.origin = (4.0, 2.0, -3.0)
+        route.receive(mav.MAVLink_heartbeat_message(2, 12, 160, 6 << 16, 4, 3), 100)
+        ground = mav.MAVLink_extended_sys_state_message(
+            0, mav.MAV_LANDED_STATE_ON_GROUND
+        )
+        route.receive(ground, 99)
+        self.scenario.target, down_speed = route.update(100.05, True, self.inputs.pose)
+        self.scenario.tick(self.bridge, 100.05, down_speed)
+        target = next(
+            args
+            for name, args in self.link.sent
+            if name == "set_position_target_local_ned_send"
+        )
+        self.assertEqual((target[4], target[10]), (2520, 0.5))
+        self.assertEqual(route.phase, "landing")
+        route.receive(ground, 100.1)
+        route.update(100.1, True, self.inputs.pose)
+        self.assertEqual(route.phase, "landed")
+        self.assertFalse(route.status()["passed"])
+        route.receive(mav.MAVLink_heartbeat_message(2, 12, 32, 0, 3, 3), 100.2)
+        self.assertIsNone(route.update(100.2, True, self.inputs.pose))
+        self.assertTrue(route.status()["passed"])
+        self.assertFalse(any(name == "command_long_send" for name, _ in self.link.sent))
 
     def test_substantial_slowdown_stops_experiment(self):
         self.connect()

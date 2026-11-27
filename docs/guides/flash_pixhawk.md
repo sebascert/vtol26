@@ -2,8 +2,10 @@
 
 Keep propellers removed and battery and actuator power disconnected.
 
-The firmware applies the TELEM2 connection settings automatically. No manual
-serial configuration is needed after flashing.
+The firmware defaults to the Stallion HIL airframe (22001) on a board with no
+saved airframe. It configures USB for HIL and TELEM2 for the companion at 230400
+baud. A previously selected airframe survives a reflash. To switch that board to
+HIL, use the [one-time configuration](hil_simulation.md#one-time-configuration).
 
 1. Install the [shared vehicle configuration](../../config/README.md) first.
    Then open a terminal in the project root and build the firmware:
