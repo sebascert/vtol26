@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sdf version="1.9">
   <world name="pvtol_world">
-    <!-- SITL uses PX4's magnetic model; external HIL uses the field below. -->
     <atmosphere type="adiabatic"/>
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
@@ -11,7 +10,7 @@
       <elevation>0</elevation>
     </spherical_coordinates>
     <gravity>0 0 -9.81</gravity>
-    <!-- Synthetic earth field in ENU tesla; HIL rotates it using the IMU attitude. -->
+    <!-- The SIL and HIL sensor model rotates this ENU field (tesla) into the vehicle frame. -->
     <magnetic_field>0.0000008 0.0000215 -0.0000427</magnetic_field>
 
     <physics name="pvtol_physics" type="dart">

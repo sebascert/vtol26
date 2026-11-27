@@ -67,11 +67,12 @@ the configured disarmed values. Wrong-sized, nonfinite or out-of-range messages
 immediately invalidate the previous command. Resetting simulation time also
 invalidates it. Passive aerodynamic forces still apply while disarmed.
 
-PX4 profile 4501 uses `/model/controlled_drone/actuators_normalized` instead:
-`gz.msgs.Actuators.normalized` carries three motor values in `[0,1]` and six
-servo values in `[-1,1]`. Its required header stamp identifies the original PX4
-state sample in simulation time. The plant checks both source age and receive
-age, then inverts the normalization using the selected vehicle limits.
+The Python SIL/HIL bridge publishes on
+`/model/controlled_drone/actuators_normalized`: `gz.msgs.Actuators.normalized`
+carries three motor values in `[0,1]` and six servo values in `[-1,1]`. The
+bridge checks the PX4 packet age using MAVLink time sync, then stamps its Gazebo
+output with the current simulation time. The plant checks both source age and
+receive age, then inverts the normalization using the selected vehicle limits.
 
 ## Verification and remaining work
 
@@ -92,26 +93,24 @@ Print-mesh origins and axes are corrected by visual assembly poses in the SDF.
 See the [mesh notes](models/stallion_vtol/meshes/README.md) for provenance and
 placement limits. These visual offsets do not change physical calibration.
 
-The custom aircraft supplies IMU, pressure and GPS to PX4's native Gazebo
-bridge. PX4's existing magnetic sensor simulator supplies magnetic readings from
-Gazebo truth. Follow the
-[sensor test guide](../docs/gen/test_stallion_sensors.md) to verify the EKF
-state estimates with the sensor-only startup profile.
+The [closed-loop SIL test](../controller/vtol_tests/gazebo_closed_loop.py) uses
+the same Python bridge and PX4 profile 22001 as
+[hardware HIL](../docs/guides/hil_simulation.md). `run_hil.py` starts Gazebo,
+forwards ground-station traffic and handles optional target commands.
+`gazebo_sensor_model.py` samples Gazebo and generates the body-frame
+magnetometer readings. `hil_bridge.py` translates sensors and actuator controls,
+checks the PX4 profile and timestamps, and maps the nine actuator channels. In
+SIL, two PTY pairs carry the HIL and companion links. On hardware those links
+use USB and TELEM2. The constant world magnetic field, Gaussian magnetic sensor
+noise (0.02/0.02/0.03 gauss standard deviation in body axes, matching PX4's
+`sensor_mag_sim`) and GPS accuracy are synthetic sensor assumptions. The noise
+keeps stationary magnetic samples from triggering PX4's stuck-sensor detector.
 
-The [closed-loop test](../docs/gen/test_closed_loop_guide.md) runs the real
-companion allocator, PX4's gated consumer and this plant, including
-altitude/lateral targets and input-loss checks. It uses the same `sitl` build
-with profile 4501; the stock X500 diagnostic test and profile 4500 sensor test
-remain separate. The [external HIL bridge](../docs/guides/hil_simulation.md)
-connects this plant to a Pixhawk over USB MAVLink, with a separate TELEM2
-companion link. It sends simulated IMU, magnetic field, pressure and GPS,
-receives the nine HIL controls and forwards QGroundControl traffic through
-UDP 14550. It requires profile 22001, synchronized board time and fresh control
-packets. It does not arm automatically. The constant world magnetic field,
-Gaussian magnetic sensor noise (0.02/0.02/0.03 gauss standard deviation in body
-axes, matching PX4's `sensor_mag_sim`) and GPS accuracy are synthetic sensor
-assumptions. The noise keeps stationary magnetic samples from triggering PX4's
-stuck-sensor detector.
+The stock X500 and the
+[sensor-only profile 4500 diagnostic](../controller/vtol_tests/gazebo_sensors.py)
+use the `sitl-native` build. In profile 4500, PX4 receives IMU, pressure and GPS
+through its native Gazebo bridge and simulates magnetic readings from Gazebo
+truth.
 
 Run the serial/Gazebo transport regression without a board:
 

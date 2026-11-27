@@ -3,6 +3,11 @@
 Gazebo runs on the host computer, PX4 on the Pixhawk, and the allocator on the
 Raspberry Pi. Run host computer commands from the project root.
 
+For a desktop rehearsal, follow the
+[SIL build and run instructions](../../README.md#testing). The same bridge,
+vehicle configuration, HIL messages and PX4 profile run on both setups. Physical
+UART behavior and Pi solve times require the hardware bench.
+
 Keep physical motor/servo power disconnected throughout this simulation.
 
 1. Follow the [Pixhawk flashing guide](flash_pixhawk.md) and

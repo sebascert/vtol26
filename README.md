@@ -18,16 +18,18 @@ flowchart LR
     Vehicle[Shared vehicle configuration] --> Allocator
     Vehicle --> Simulation[Gazebo VTOL model]
     Vehicle -->|Generated actuator limits| PX4
-    PX4 -->|Gated actuator outputs| Simulation
-    Simulation -->|Sensors| PX4
+    PX4 -->|HIL_ACTUATOR_CONTROLS| Bridge[Python HIL bridge]
+    Bridge -->|Normalized actuators| Simulation
+    Simulation -->|Sensors| Bridge
+    Bridge -->|HIL_SENSOR and HIL_GPS| PX4
 ```
 
 PX4 validates received allocations and publishes them internally as
-`pso_allocation`. The custom aircraft SITL profile applies fresh allocations to
-the Gazebo plant through `pso_control`. The companion also writes results as
-JSON for inspection. On the aircraft, PX4 runs on a Pixhawk 6C and the companion
-runs on a Raspberry Pi 4B. Desktop tests run PX4 and the allocator on the
-development computer.
+`pso_allocation`. Desktop SIL and Pixhawk HIL use profile 22001 and send fresh
+allocations from `pso_control` to the Gazebo plant over the Python HIL bridge.
+The companion also writes results as JSON for inspection. On the aircraft, PX4
+runs on a Pixhawk 6C and the companion runs on a Raspberry Pi 4B. Desktop tests
+run PX4 and the allocator on the development computer.
 
 Vehicle geometry, physics and actuator limits come from
 [config/vehicle.json][vehicle-config]. The allocator and custom Gazebo plant
@@ -92,8 +94,17 @@ covers Ethernet and SSH access.
 ## Testing
 
 The allocator, controller and image READMEs describe their automated tests. For
-a complete PX4–allocator–Gazebo feedback loop on the development computer,
-follow the [closed-loop test guide][gazebo-test].
+a headless desktop SIL run, build the components and run both loss scenarios:
+
+```sh
+./controller/build.sh sitl
+./simulation/build.sh
+./companion/allocator/build.sh
+controller/build/venv/bin/python3 controller/vtol_tests/gazebo_closed_loop.py
+```
+
+Two pseudo-terminal pairs stand in for USB and the companion UART. Results are
+written to `controller/build/gazebo-closed-loop/`.
 
 The [HIL simulation guide](docs/guides/hil_simulation.md) configures the
 external HIL profile, USB bridge and separate companion link.
@@ -114,4 +125,4 @@ servo conversion. Model convergence alone does not establish flight stability.
 [model]: docs/model/vtol_model.tex
 [flash-pixhawk]: docs/guides/flash_pixhawk.md
 [flash-companion]: docs/guides/flash_raspberry_pi.md
-[gazebo-test]: docs/gen/test_closed_loop_guide.md
+[gazebo-test]: controller/vtol_tests/gazebo_closed_loop.py

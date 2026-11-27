@@ -5,13 +5,16 @@ import math
 import struct
 import sys
 import unittest
+from itertools import pairwise
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import hil_bridge as hil
+import gazebo_sensor_model as sensors
 from gz.msgs10.pose_v_pb2 import Pose_V
+from hil_bridge import Bridge
 from pymavlink.dialects.v20 import common as mav
+from run_hil import SIMULATION, Scenario
 
 
 class FakePublisher:
@@ -22,10 +25,6 @@ class FakePublisher:
 class FakeNode:
     def subscribe(self, *args):
         return True
-
-    def advertise(self, *args):
-        self.publisher = FakePublisher()
-        return self.publisher
 
 
 class FakeLink:
@@ -40,20 +39,22 @@ class FakeLink:
 class HilTest(unittest.TestCase):
     def setUp(self):
         self.vehicle = json.loads(
-            (hil.SIMULATION.parent / "config/vehicle.json").read_text()
+            (SIMULATION.parent / "config/vehicle.json").read_text()
         )
         self.link = FakeLink()
-        with patch.object(hil, "Node", FakeNode):
-            self.bridge = hil.Bridge(
-                self.link,
-                self.vehicle,
-                "world",
-                "aircraft",
-                [0.000001, 0.00002, -0.00004],
-                15,
-            )
+        node = FakeNode()
+        self.inputs = sensors.GazeboSensors(
+            node, "world", "aircraft", [1e-6, 2e-5, -4e-5]
+        )
+        self.publisher = FakePublisher()
+        self.bridge = Bridge(self.link, self.vehicle, self.publisher)
+        self.scenario = Scenario(None)
         self.encoder = mav.MAVLink(None, srcSystem=1, srcComponent=1)
         self.decoder = mav.MAVLink(None)
+
+    def tick(self, now):
+        self.bridge.tick(now, self.inputs.snapshot())
+        self.scenario.tick(self.bridge, now)
 
     def receive(self, message, now=100):
         self.bridge.receive(self.decoder.parse_char(message.pack(self.encoder)), now)
@@ -81,16 +82,16 @@ class HilTest(unittest.TestCase):
         self.assertTrue(self.bridge.ready(100))
 
     def sensors(self):
-        imu = hil.IMU()
+        imu = sensors.IMU()
         imu.header.stamp.sec = 10
         imu.linear_acceleration.z = 9.81
         imu.angular_velocity.x = 1
         imu.angular_velocity.y = 2
         imu.angular_velocity.z = 3
-        pressure = hil.FluidPressure()
+        pressure = sensors.FluidPressure()
         pressure.header.stamp.sec = 10
         pressure.pressure = 101325
-        gps = hil.NavSat()
+        gps = sensors.NavSat()
         gps.header.stamp.sec = 10
         gps.latitude_deg = 47
         gps.longitude_deg = 8
@@ -102,24 +103,23 @@ class HilTest(unittest.TestCase):
         p = pose.pose.add()
         p.name = "aircraft"
         p.orientation.w = p.orientation.z = math.sqrt(0.5)
-        clock = hil.Clock()
+        clock = sensors.Clock()
         clock.sim.sec = 10
-        self.bridge.latest = {
-            key: (value, 100)
-            for key, value in [
-                ("imu", imu),
-                ("pressure", pressure),
-                ("gps", gps),
-                ("pose", pose),
-                ("clock", clock),
-            ]
+        self.messages = {
+            "pose": pose,
+            "pressure": pressure,
+            "gps": gps,
+            "clock": clock,
+            "imu": imu,
         }
+        for kind, message in self.messages.items():
+            self.inputs.receive(kind, message, 100)
 
     def test_sensor_frames_units_flags_and_no_repetition(self):
         self.connect()
-        self.sensors()
-        with patch.object(hil.random, "gauss", return_value=0):
-            self.bridge.tick(100)
+        with patch.object(self.inputs.rng, "gauss", return_value=0):
+            self.sensors()
+            self.tick(100)
         imu = next(a for n, a in self.link.sent if n == "hil_sensor_send")
         self.assertAlmostEqual(imu[3], -9.81)
         self.assertEqual(imu[4:7], (1, -2, -3))
@@ -130,22 +130,51 @@ class HilTest(unittest.TestCase):
         gps = next(a for n, a in self.link.sent if n == "hil_gps_send")
         self.assertEqual(gps[2:5], (470000000, 80000000, 100000))
         self.assertEqual(gps[8:11], (100, 200, -300))
-        self.bridge.tick(100.01)
+        self.tick(100.01)
         self.assertEqual(sum(n == "hil_sensor_send" for n, a in self.link.sent), 1)
+
+    def test_touchdown_impulse_survives_250_hz_sampling(self):
+        # A 2.32 m/s stop in one 1 ms physics step, at each phase of the HIL period.
+        self.connect()
+        self.sensors()
+        imu = self.messages["imu"]
+        clock = self.messages["clock"]
+        for phase in range(4):
+            with self.subTest(phase=phase):
+                self.link.sent.clear()
+                for step in range(80):
+                    ms = 80 * phase + step
+                    now = 100 + ms / 1000
+                    imu.header.stamp.nsec = clock.sim.nsec = ms * 1_000_000
+                    imu.linear_acceleration.z = 9.81 + (
+                        2320 if step == 32 + phase else 0
+                    )
+                    self.inputs.receive("pose", self.messages["pose"], now)
+                    self.inputs.receive("imu", imu, now)
+                    self.inputs.receive("clock", clock, now)
+                    if step % 4 == 0:
+                        self.tick(now)
+                packets = [
+                    args for name, args in self.link.sent if name == "hil_sensor_send"
+                ]
+                self.assertEqual(len(packets), 20)
+                delta_v = sum((-packet[3] - 9.81) * 0.004 for packet in packets)
+                self.assertAlmostEqual(delta_v, 2.32)
+                self.assertLessEqual(max(-p[3] - 9.81 for p in packets), 150)
 
     def test_stationary_magnetometer_remains_live_on_wire(self):
         self.connect()
         self.sensors()
-        with patch.object(hil.random, "gauss", side_effect=hil.random.Random(0).gauss):
-            for sample in range(1200):
-                now = 100 + sample / 250
-                self.bridge.heartbeat = self.bridge.sync_received = now
-                for key, (message, _) in self.bridge.latest.items():
-                    stamp = message.sim if key == "clock" else message.header.stamp
-                    stamp.sec = 10 + sample // 250
-                    stamp.nsec = (sample % 250) * 4000000
-                    self.bridge.latest[key] = (message, now)
-                self.bridge.tick(now)
+        self.inputs.rng.seed(0)
+        for sample in range(1200):
+            now = 100 + sample / 250
+            self.bridge.heartbeat = self.bridge.sync_received = now
+            for key, message in self.messages.items():
+                stamp = message.sim if key == "clock" else message.header.stamp
+                stamp.sec = 10 + sample // 250
+                stamp.nsec = (sample % 250) * 4000000
+                self.inputs.receive(key, message, now)
+            self.tick(now)
         samples = [
             self.decoder.parse_char(
                 mav.MAVLink_hil_sensor_message(*args).pack(self.encoder)
@@ -155,7 +184,7 @@ class HilTest(unittest.TestCase):
         ]
         self.assertEqual(len(samples), 1200)
         vectors = [(s.xmag, s.ymag, s.zmag) for s in samples]
-        for previous, current in zip(vectors, vectors[1:]):
+        for previous, current in pairwise(vectors):
             self.assertGreater(max(abs(a - b) for a, b in zip(previous, current)), 1e-6)
         for axis, expected, sigma in zip(
             zip(*vectors), (0.2, 0.01, 0.4), (0.02, 0.02, 0.03)
@@ -166,9 +195,20 @@ class HilTest(unittest.TestCase):
             self.assertGreater(rms, 0.7 * sigma)
             self.assertLess(rms, 1.3 * sigma)
 
+    def test_imu_requires_a_recent_vehicle_pose(self):
+        self.sensors()
+        self.assertIn("imu", self.inputs.snapshot())
+        self.inputs.receive("imu", self.messages["imu"], 100.2)
+        self.assertNotIn("imu", self.inputs.snapshot())
+        self.messages["pose"].pose[0].orientation.Clear()
+        self.inputs.receive("pose", self.messages["pose"], 100.21)
+        self.inputs.receive("imu", self.messages["imu"], 100.21)
+        with self.assertRaisesRegex(ValueError, "Gazebo orientation"):
+            self.inputs.snapshot()
+
     def test_profile_and_hil_required(self):
         self.sensors()
-        self.bridge.tick(100)
+        self.tick(100)
         self.assertFalse(any(n == "hil_sensor_send" for n, a in self.link.sent))
         self.receive(
             mav.MAVLink_heartbeat_message(2, mav.MAV_AUTOPILOT_PX4, 32, 0, 3, 3)
@@ -192,8 +232,8 @@ class HilTest(unittest.TestCase):
         self.connect()
         self.sensors()
         self.receive(self.controls())
-        self.bridge.tick(100)
-        self.assertAlmostEqual(self.bridge.node.publisher.last.normalized[0], 0.5)
+        self.tick(100)
+        self.assertAlmostEqual(self.publisher.last.normalized[0], 0.5)
         self.receive(self.controls())
         self.assertEqual(self.bridge.control, self.bridge.safe)
         self.receive(self.controls(stamp=2002000, armed=False))
@@ -206,10 +246,8 @@ class HilTest(unittest.TestCase):
         self.receive(self.controls(stamp=2003000, values=bad))
         self.assertEqual(self.bridge.control, self.bridge.safe)
         self.receive(self.controls(stamp=2004000))
-        self.bridge.tick(100.2)
-        self.assertEqual(
-            list(self.bridge.node.publisher.last.normalized), self.bridge.safe
-        )
+        self.tick(100.2)
+        self.assertEqual(list(self.publisher.last.normalized), self.bridge.safe)
 
     def test_mapping_uses_configured_slots(self):
         self.bridge.mapping = [15, 0, 8, 1, 9, 2, 10, 3, 11]
@@ -225,17 +263,17 @@ class HilTest(unittest.TestCase):
     def test_pause_reset_and_clock_sync_loss(self):
         self.connect()
         self.sensors()
-        self.bridge.tick(100)
-        self.bridge.latest["clock"][0].sim.sec = 9
+        self.tick(100)
+        self.messages["clock"].sim.sec = 9
         with self.assertRaises(RuntimeError):
-            self.bridge.tick(100.01)
+            self.tick(100.01)
         self.assertFalse(self.bridge.ready(102))
 
     def test_optional_target_never_sends_arming_command(self):
         self.connect()
         self.sensors()
-        self.bridge.target = [1, 2, -0.3]
-        self.bridge.tick(100)
+        self.scenario.target = [1, 2, -0.3]
+        self.tick(100)
         target = next(
             a for n, a in self.link.sent if n == "set_position_target_local_ned_send"
         )
@@ -245,11 +283,11 @@ class HilTest(unittest.TestCase):
     def test_substantial_slowdown_stops_experiment(self):
         self.connect()
         self.sensors()
-        self.bridge.tick(100)
+        self.tick(100)
         self.bridge.heartbeat = self.bridge.sync_received = 101.1
-        self.bridge.latest["clock"][0].sim.nsec = 200000000
+        self.messages["clock"].sim.nsec = 200000000
         with self.assertRaisesRegex(RuntimeError, "not keeping real time"):
-            self.bridge.tick(101.1)
+            self.tick(101.1)
 
 
 if __name__ == "__main__":

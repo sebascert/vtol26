@@ -5,4 +5,4 @@ if [[ ! -x "$PROJECT_DIR/build/venv/bin/python3" || ! -x "$PROJECT_DIR/build/vto
 	echo 'Run simulation/build.sh first.' >&2
 	exit 1
 fi
-exec "$PROJECT_DIR/build/venv/bin/python3" "$PROJECT_DIR/hil_bridge.py" "$@"
+exec "$PROJECT_DIR/build/venv/bin/python3" "$PROJECT_DIR/run_hil.py" "$@"
